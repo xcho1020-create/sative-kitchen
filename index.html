@@ -1,45 +1,43 @@
-sative kitchen
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sative Kitchen - Deliveries</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header (shown on all pages) -->
+  <header id="header" style="display: none;">
+    <div class="container">
+      <div class="logo">sative kitchen</div>
+      <div class="user-info">
+        <span class="role-badge" id="roleDisplay"></span>
+        <button class="secondary" onclick="logout()">logout</button>
+      </div>
+    </div>
+  </header>
 
-select role & enter password
-
-👩 mom (executor)
-
-👨 manager (cafe)
-
-🔧 admin (you)
-
-Deliveries
-
-+ new delivery
-
-Create Delivery
-
-← back
-
-date:
-
-products:
-
-save delivery
-
-Admin Panel
-
-products
-
-audit log
-
-Manage Products
-
-← back
-
-Edit prices:
-
-+ add new product
-
-Audit Log
-
-← back
-
-ℹ️ you have read-only access to deliveries
-
-Deliveries
+  <!-- Main container -->
+  <div class="container">
+    
+    <!-- Login Page -->
+    <div data-page="login">
+      <div class="login-container">
+        <h1>sative kitchen</h1>
+        <p style="text-align: center; margin-bottom: 30px; color: #7f8c8d;">select role & enter password</p>
+        
+        <div class="login-roles">
+          <div>
+            <button class="role-button" onclick="document.getElementById('loginRole').value='mom'; document.getElementById('passwordInput').focus()">👩 mom (executor)</button>
+            <input type="password" id="passwordInput" class="password-input" placeholder="password" onkeypress="if(event.key==='Enter') loginUser('mom', this.value)">
+          </div>
+          
+          <div>
+            <button class="role-button" onclick="document.getElementById('loginRole').value='manager'; document.getElementById('passwordInput').focus()">👨 manager (cafe)</button>
+            <input type="password" class="password-input" placeholder="password" onkeypress="if(event.key==='Enter') loginUser('manager', this.value)">
+          </div>
+          
+          <div>
+            <button class="role-button" onclick="document.getElementById('loginRole').value='admin'; document.getElementById('passwordInput').focus()">🔧 admin (you)</button>
+            <input type="password" class="password-input" placeholder="password" onkeypress="if(event.key==='Enter') loginUser
