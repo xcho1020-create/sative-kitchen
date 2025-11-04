@@ -254,7 +254,7 @@
       const html = result.data.reverse().map(d => `
         <div class="delivery-card">
           <div class="delivery-header">
-            <div class="delivery-date" onclick="viewDelivery(${d.id})">${d.date}</div>
+            <div class="delivery-date" onclick="viewDelivery(${d.id})">${d.date ? d.date.split('T')[0] : 'No date'}</div>
             ${currentRole === 'executor' ? `
               <div class="delivery-actions">
                 <button class="danger" onclick="event.stopPropagation(); deleteDelivery(${d.id})">delete</button>
@@ -314,7 +314,7 @@
       const delivery = result.data;
       
       // Заголовок
-      document.getElementById('deliveryDetailTitle').textContent = `Delivery ${delivery.date}`;
+      const cleanDate = delivery.date ? delivery.date.split('T')[0] : 'No date'; document.getElementById('deliveryDetailTitle').textContent = `Delivery ${cleanDate}`;
       
       // Итого
       document.getElementById('deliveryDetailSummary').innerHTML = `
