@@ -19,6 +19,10 @@
     button.secondary:hover { background: #7f8c8d; }
     button.primary { background: #1a7f8f; }
     button.primary:hover { background: #156873; }
+    button.danger { background: #e74c3c; padding: 6px 12px; font-size: 13px; }
+    button.danger:hover { background: #c0392b; }
+    button.edit-btn { background: #3498db; padding: 6px 12px; font-size: 13px; }
+    button.edit-btn:hover { background: #2980b9; }
     [data-page] { display: none; }
     .login-container { max-width: 400px; margin: 60px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .login-container h1 { font-size: 28px; margin-bottom: 10px; text-align: center; }
@@ -31,11 +35,13 @@
     .delivery-card { background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .delivery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .delivery-date { font-weight: 600; font-size: 16px; }
+    .delivery-actions { display: flex; gap: 8px; }
     .delivery-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; font-size: 14px; }
     .delivery-totals div { display: flex; flex-direction: column; }
     .delivery-totals span:first-child { color: #7f8c8d; font-size: 12px; margin-bottom: 2px; }
     .delivery-totals span:last-child { font-weight: 600; }
     .margin-positive { color: #27ae60; }
+    .sell-positive { color: #27ae60; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; font-weight: 600; margin-bottom: 5px; }
     .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
@@ -68,7 +74,7 @@
         <p>select role & enter password</p>
         <div class="login-roles">
           <div class="role-box">
-            <h3>👩 исполнитель</h3>
+            <h3>👩 executor</h3>
             <input type="password" id="pwd-executor" placeholder="enter password">
             <button class="primary" onclick="loginUser('executor')">login</button>
           </div>
@@ -220,10 +226,18 @@
         return;
       }
       
+      allDeliveries = result.data;
+      
       const html = result.data.reverse().map(d => `
         <div class="delivery-card">
           <div class="delivery-header">
-            <div class="delivery-date">${d.date || 'no date'}</div>
+            <div class="delivery-date">${d.date}</div>
+            ${currentRole === 'executor' ? `
+              <div class="delivery-actions">
+                <button class="edit-btn" onclick="editDelivery(${d.id})">edit</button>
+                <button class="danger" onclick="deleteDelivery(${d.id})">delete</button>
+              </div>
+            ` : ''}
           </div>
           <div class="delivery-totals">
             <div>
@@ -232,7 +246,7 @@
             </div>
             <div>
               <span>sell price</span>
-              <span>${(d.total_sell || 0).toFixed(2)}₾</span>
+              <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>
             </div>
             <div>
               <span>margin</span>
@@ -243,6 +257,26 @@
       `).join('');
       
       document.getElementById('deliveriesList').innerHTML = html;
+    }
+
+    // DELETE DELIVERY
+    async function deleteDelivery(id) {
+      if (!confirm('delete this delivery?')) return;
+      
+      const result = await apiPost('deleteDelivery', { id });
+      
+      if (result.success) {
+        alert('delivery deleted');
+        loadDeliveries();
+      } else {
+        alert('error: ' + (result.error || 'unknown'));
+      }
+    }
+
+    // EDIT DELIVERY (заглушка - можно доработать)
+    function editDelivery(id) {
+      alert('edit functionality coming soon');
+      // TODO: implement edit
     }
 
     // LOAD PRODUCTS FOR FORM
