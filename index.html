@@ -3,11 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sative Kitchen - Deliveries</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Sative Kitchen</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #2c3e50; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    header { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
+    header .container { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; }
+    .logo { font-size: 24px; font-weight: 700; color: #2c3e50; }
+    .user-info { display: flex; align-items: center; gap: 15px; font-size: 14px; }
+    .role-badge { background: #e8f4f8; color: #1a7f8f; padding: 6px 12px; border-radius: 20px; font-weight: 600; }
+    button { background: #2c3e50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+    button:hover { background: #1a252f; }
+    button.secondary { background: #95a5a6; }
+    button.secondary:hover { background: #7f8c8d; }
+    button.primary { background: #1a7f8f; }
+    button.primary:hover { background: #156873; }
+    [data-page] { display: none; }
+    .login-container { max-width: 400px; margin: 60px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .login-container h1 { font-size: 28px; margin-bottom: 10px; text-align: center; }
+    .login-container p { text-align: center; margin-bottom: 30px; color: #7f8c8d; font-size: 14px; }
+    .login-roles { display: grid; gap: 20px; }
+    .role-box { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; }
+    .role-box h3 { font-size: 16px; margin-bottom: 10px; color: #2c3e50; }
+    .role-box input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 14px; }
+    .role-box button { width: 100%; }
+    .delivery-card { background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .delivery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .delivery-date { font-weight: 600; font-size: 16px; }
+    .delivery-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; font-size: 14px; }
+    .delivery-totals div { display: flex; flex-direction: column; }
+    .delivery-totals span:first-child { color: #7f8c8d; font-size: 12px; margin-bottom: 2px; }
+    .delivery-totals span:last-child { font-weight: 600; }
+    .margin-positive { color: #27ae60; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 5px; }
+    .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+    .products-list { background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px; max-height: 400px; overflow-y: auto; }
+    .product-item { background: white; padding: 12px; border-radius: 6px; margin-bottom: 8px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; align-items: center; }
+    .product-item input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%; }
+    .admin-products .product-row { background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .admin-products .product-name { flex: 1; font-weight: 500; }
+    .admin-products .product-prices { display: flex; gap: 10px; }
+    .admin-products .product-prices input { width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .loading { text-align: center; padding: 40px; color: #7f8c8d; }
+  </style>
 </head>
 <body>
-  <!-- Header (shown on all pages) -->
   <header id="header" style="display: none;">
     <div class="container">
       <div class="logo">sative kitchen</div>
@@ -18,131 +60,356 @@
     </div>
   </header>
 
-  <!-- Main container -->
   <div class="container">
-    
     <!-- Login Page -->
     <div data-page="login">
       <div class="login-container">
         <h1>sative kitchen</h1>
-        <p style="text-align: center; margin-bottom: 30px; color: #7f8c8d;">select role & enter password</p>
-        
+        <p>select role & enter password</p>
         <div class="login-roles">
-          <div>
-            <button class="role-button" onclick="document.getElementById('loginRole').value='mom'; document.getElementById('passwordInput').focus()">👩 mom (executor)</button>
-            <input type="password" id="passwordInput" class="password-input" placeholder="password" onkeypress="if(event.key==='Enter') loginUser('mom', this.value)">
+          <div class="role-box">
+            <h3>👩 mom (executor)</h3>
+            <input type="password" id="pwd-mom" placeholder="enter password">
+            <button class="primary" onclick="loginUser('mom')">login</button>
           </div>
-          
-          <div>
-            <button class="role-button" onclick="document.getElementById('loginRole').value='manager'; document.getElementById('passwordInput').focus()">👨 manager (cafe)</button>
-            <input type="password" class="password-input" placeholder="password" onkeypress="if(event.key==='Enter') loginUser('manager', this.value)">
+          <div class="role-box">
+            <h3>👨 manager (cafe)</h3>
+            <input type="password" id="pwd-manager" placeholder="enter password">
+            <button class="primary" onclick="loginUser('manager')">login</button>
           </div>
-          
-          <div>
-            <button class="role-button" onclick="document.getElementById('loginRole').value='admin'; document.getElementById('passwordInput').focus()">🔧 admin (you)</button>
-            <input type="password" class="password-input" placeholder="password" onkeypress="if(event.key==='Enter') loginUser('admin', this.value)">
+          <div class="role-box">
+            <h3>🔧 admin (you)</h3>
+            <input type="password" id="pwd-admin" placeholder="enter password">
+            <button class="primary" onclick="loginUser('admin')">login</button>
           </div>
         </div>
-        
-        <input type="hidden" id="loginRole">
       </div>
     </div>
 
-    <!-- Home Page (for mom & manager) -->
+    <!-- Home Page (Mom & Manager) -->
     <div data-page="home">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1>Deliveries</h1>
-        <button onclick="showPage('new-delivery')" id="newDeliveryBtn">+ new delivery</button>
+        <h1>deliveries</h1>
+        <button onclick="showNewDelivery()" id="newBtn">+ new delivery</button>
       </div>
-      <div id="deliveriesList"></div>
+      <div id="deliveriesList" class="loading">loading...</div>
     </div>
 
     <!-- New Delivery Page -->
     <div data-page="new-delivery">
-      <h1>Create Delivery</h1>
-      <button onclick="showPage('home')" class="secondary">← back</button>
-      
-      <div class="new-delivery-form">
-        <div class="form-row">
-          <label>date:</label>
-          <input type="date" id="deliveryDate">
-        </div>
-        
-        <h3 style="margin-top: 20px; margin-bottom: 15px;">products:</h3>
-        <div id="deliveryItemsList" class="delivery-items"></div>
-        
-        <button onclick="createDelivery()" style="margin-top: 20px; width: 100%;">save delivery</button>
+      <h1>create delivery</h1>
+      <button onclick="showPage('home')" class="secondary" style="margin-bottom: 20px;">← back</button>
+      <div class="form-group">
+        <label>date:</label>
+        <input type="date" id="deliveryDate">
       </div>
+      <h3 style="margin: 20px 0 10px;">products:</h3>
+      <div id="productsForm" class="products-list"></div>
+      <button onclick="saveDelivery()" style="width: 100%; margin-top: 20px;">save delivery</button>
     </div>
 
     <!-- Admin Page -->
     <div data-page="admin">
-      <h1>Admin Panel</h1>
-      <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-        <button onclick="showPage('admin-products')">products</button>
+      <h1>admin panel</h1>
+      <div style="display: flex; gap: 15px; margin: 30px 0;">
+        <button onclick="showPage('admin-products')">manage products</button>
         <button class="secondary" onclick="showPage('admin-log')">audit log</button>
       </div>
     </div>
 
     <!-- Admin Products -->
     <div data-page="admin-products">
-      <h1>Manage Products</h1>
-      <button onclick="showPage('admin')" class="secondary">← back</button>
-      
-      <div style="margin-top: 20px; margin-bottom: 20px;">
-        <h3>Edit prices:</h3>
-        <div id="productsList"></div>
-      </div>
-      
-      <button onclick="showAddProduct()" style="width: 100%; margin-top: 20px;">+ add new product</button>
+      <h1>manage products</h1>
+      <button onclick="showPage('admin')" class="secondary" style="margin-bottom: 20px;">← back</button>
+      <div id="adminProductsList" class="admin-products"></div>
     </div>
 
-    <!-- Admin Audit Log -->
+    <!-- Admin Log -->
     <div data-page="admin-log">
-      <h1>Audit Log</h1>
-      <button onclick="showPage('admin')" class="secondary">← back</button>
-      <div id="auditLogList" style="margin-top: 20px;"></div>
+      <h1>audit log</h1>
+      <button onclick="showPage('admin')" class="secondary" style="margin-bottom: 20px;">← back</button>
+      <div id="auditLogList"></div>
     </div>
-
-    <!-- Manager View (Read-only) -->
-    <div data-page="manager">
-      <div class="manager-view">
-        ℹ️ you have read-only access to deliveries
-      </div>
-      <h1>Deliveries</h1>
-      <div id="deliveriesList"></div>
-    </div>
-
   </div>
 
-  <script src="config.js"></script>
-  <script src="app.js"></script>
   <script>
-    // Login helper
-    function loginUser(role, password) {
-      if (login(role, password)) {
-        document.getElementById('header').style.display = 'block';
-        document.getElementById('roleDisplay').textContent = role.toUpperCase();
-        if (role === 'manager') {
-          showPage('manager');
-        } else if (role === 'mom') {
-          showPage('home');
-        } else if (role === 'admin') {
-          showPage('admin');
-        }
+    // CONFIG
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw8qyk5QShIHCi2dm3sHZcAQizNH2QGEAvkKI6lYO2ZNb0f3NZUaLTlQxjfyVzGRHMbqg/exec';
+    const AUTH = { mom: '1234', manager: '5678', admin: '9999' };
+    
+    let currentUser = null;
+    let currentRole = null;
+    let allProducts = [];
+    let allDeliveries = [];
+
+    // API CALL
+    async function apiCall(action, params = {}) {
+      const url = new URL(API_URL);
+      url.searchParams.append('action', action);
+      Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+      
+      try {
+        const response = await fetch(url.toString());
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error('API Error:', error);
+        return { error: error.message };
       }
     }
 
-    // Set today's date by default
+    async function apiPost(action, data) {
+      const url = `${API_URL}?action=${action}`;
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error('API Error:', error);
+        return { error: error.message };
+      }
+    }
+
+    // AUTH
+    function loginUser(role) {
+      const pwd = document.getElementById(`pwd-${role}`).value;
+      if (AUTH[role] === pwd) {
+        currentUser = role;
+        currentRole = role;
+        document.getElementById('header').style.display = 'block';
+        document.getElementById('roleDisplay').textContent = role.toUpperCase();
+        
+        if (role === 'admin') {
+          showPage('admin');
+        } else {
+          showPage('home');
+          loadDeliveries();
+        }
+      } else {
+        alert('invalid password');
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      currentRole = null;
+      document.getElementById('header').style.display = 'none';
+      showPage('login');
+    }
+
+    // NAVIGATION
+    function showPage(page) {
+      document.querySelectorAll('[data-page]').forEach(el => el.style.display = 'none');
+      const target = document.querySelector(`[data-page="${page}"]`);
+      if (target) target.style.display = 'block';
+      
+      // Hide new delivery button for manager
+      const newBtn = document.getElementById('newBtn');
+      if (newBtn) newBtn.style.display = currentRole === 'manager' ? 'none' : 'block';
+    }
+
+    // LOAD DELIVERIES
+    async function loadDeliveries() {
+      document.getElementById('deliveriesList').innerHTML = '<div class="loading">loading...</div>';
+      const result = await apiCall('getDeliveries');
+      
+      if (!result.success || !result.data || result.data.length === 0) {
+        document.getElementById('deliveriesList').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">no deliveries yet</p>';
+        return;
+      }
+      
+      const html = result.data.reverse().map(d => `
+        <div class="delivery-card">
+          <div class="delivery-header">
+            <div class="delivery-date">${d.date || 'no date'}</div>
+          </div>
+          <div class="delivery-totals">
+            <div>
+              <span>cost price</span>
+              <span>${(d.total_cost || 0).toFixed(2)}₾</span>
+            </div>
+            <div>
+              <span>sell price</span>
+              <span>${(d.total_sell || 0).toFixed(2)}₾</span>
+            </div>
+            <div>
+              <span>margin</span>
+              <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      document.getElementById('deliveriesList').innerHTML = html;
+    }
+
+    // LOAD PRODUCTS FOR FORM
+    async function showNewDelivery() {
+      showPage('new-delivery');
+      document.getElementById('productsForm').innerHTML = '<div class="loading">loading products...</div>';
+      
+      const result = await apiCall('getProducts');
+      
+      if (!result.success || !result.data) {
+        document.getElementById('productsForm').innerHTML = '<p>error loading products</p>';
+        return;
+      }
+      
+      allProducts = result.data.filter(p => p.active);
+      
+      const html = allProducts.map(p => `
+        <div class="product-item" data-id="${p.id}">
+          <div><strong>${p.name}</strong><br><small>${p.unit}</small></div>
+          <div>
+            <small>cost</small><br>
+            <span>${(p.cost_price || 0).toFixed(1)}₾</span>
+          </div>
+          <div>
+            <small>sell</small><br>
+            <span>${(p.sell_price || 0).toFixed(1)}₾</span>
+          </div>
+          <input type="number" step="0.5" min="0" value="0" placeholder="qty" data-product="${p.id}">
+        </div>
+      `).join('');
+      
+      document.getElementById('productsForm').innerHTML = html;
+    }
+
+    // SAVE DELIVERY
+    async function saveDelivery() {
+      const date = document.getElementById('deliveryDate').value;
+      if (!date) {
+        alert('select date');
+        return;
+      }
+      
+      const items = [];
+      document.querySelectorAll('.product-item').forEach(row => {
+        const qty = parseFloat(row.querySelector('input').value) || 0;
+        if (qty > 0) {
+          const productId = parseInt(row.dataset.id);
+          const product = allProducts.find(p => p.id === productId);
+          if (product) {
+            items.push({
+              product_id: productId,
+              quantity: qty,
+              cost_price: product.cost_price || 0,
+              sell_price: product.sell_price || 0
+            });
+          }
+        }
+      });
+      
+      if (items.length === 0) {
+        alert('add at least one product');
+        return;
+      }
+      
+      const result = await apiPost('createDelivery', {
+        date: date,
+        items: items,
+        created_by: currentUser
+      });
+      
+      if (result.success) {
+        alert('delivery created!');
+        showPage('home');
+        loadDeliveries();
+      } else {
+        alert('error: ' + (result.error || 'unknown'));
+      }
+    }
+
+    // ADMIN - LOAD PRODUCTS
+    async function loadAdminProducts() {
+      document.getElementById('adminProductsList').innerHTML = '<div class="loading">loading...</div>';
+      const result = await apiCall('getProducts');
+      
+      if (!result.success || !result.data) {
+        document.getElementById('adminProductsList').innerHTML = '<p>error loading</p>';
+        return;
+      }
+      
+      const html = result.data.filter(p => p.active).map(p => `
+        <div class="product-row">
+          <div class="product-name">${p.name} (${p.unit})</div>
+          <div class="product-prices">
+            <input type="number" step="0.1" value="${p.cost_price || 0}" 
+                   onchange="updateProductPrice(${p.id}, 'cost_price', this.value)"
+                   placeholder="cost">
+            <input type="number" step="0.1" value="${p.sell_price || 0}"
+                   onchange="updateProductPrice(${p.id}, 'sell_price', this.value)"
+                   placeholder="sell">
+          </div>
+        </div>
+      `).join('');
+      
+      document.getElementById('adminProductsList').innerHTML = html;
+    }
+
+    // UPDATE PRODUCT
+    async function updateProductPrice(id, field, value) {
+      const result = await apiCall('getProducts');
+      if (!result.success) return;
+      
+      const product = result.data.find(p => p.id === id);
+      if (!product) return;
+      
+      product[field] = parseFloat(value) || 0;
+      
+      await apiPost('updateProduct', product);
+      alert('price updated');
+    }
+
+    // LOAD AUDIT LOG
+    async function loadAuditLog() {
+      document.getElementById('auditLogList').innerHTML = '<div class="loading">loading...</div>';
+      const result = await apiCall('getAuditLog');
+      
+      if (!result.success || !result.data || result.data.length === 0) {
+        document.getElementById('auditLogList').innerHTML = '<p>no logs</p>';
+        return;
+      }
+      
+      const html = result.data.reverse().slice(0, 50).map(log => `
+        <div style="background: white; padding: 12px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;">
+          <strong>${log.timestamp}</strong> | ${log.user} | ${log.action} | ${log.entity} #${log.entity_id}
+          <br><small style="color: #7f8c8d;">${log.details}</small>
+        </div>
+      `).join('');
+      
+      document.getElementById('auditLogList').innerHTML = html;
+    }
+
+    // INIT
     window.addEventListener('DOMContentLoaded', () => {
       const today = new Date().toISOString().split('T')[0];
       const dateInput = document.getElementById('deliveryDate');
       if (dateInput) dateInput.value = today;
       
-      if (checkAuth()) {
-        document.getElementById('header').style.display = 'block';
-        document.getElementById('roleDisplay').textContent = currentRole.toUpperCase();
-      }
+      showPage('login');
+      
+      // Admin page load handlers
+      const observer = new MutationObserver(() => {
+        const adminProducts = document.querySelector('[data-page="admin-products"]');
+        const adminLog = document.querySelector('[data-page="admin-log"]');
+        
+        if (adminProducts && adminProducts.style.display === 'block' && !adminProducts.dataset.loaded) {
+          adminProducts.dataset.loaded = 'true';
+          loadAdminProducts();
+        }
+        
+        if (adminLog && adminLog.style.display === 'block' && !adminLog.dataset.loaded) {
+          adminLog.dataset.loaded = 'true';
+          loadAuditLog();
+        }
+      });
+      
+      observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style'] });
     });
   </script>
 </body>
