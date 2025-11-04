@@ -68,9 +68,9 @@
         <p>select role & enter password</p>
         <div class="login-roles">
           <div class="role-box">
-            <h3>👩 mom (executor)</h3>
-            <input type="password" id="pwd-mom" placeholder="enter password">
-            <button class="primary" onclick="loginUser('mom')">login</button>
+            <h3>👩 исполнитель</h3>
+            <input type="password" id="pwd-executor" placeholder="enter password">
+            <button class="primary" onclick="loginUser('executor')">login</button>
           </div>
           <div class="role-box">
             <h3>👨 manager (cafe)</h3>
@@ -86,7 +86,7 @@
       </div>
     </div>
 
-    <!-- Home Page (Mom & Manager) -->
+    <!-- Home Page (Executor & Manager) -->
     <div data-page="home">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h1>deliveries</h1>
@@ -134,21 +134,20 @@
 
   <script>
     // CONFIG
-    const API_URL = 'https://script.google.com/macros/s/AKfycbw8qyk5QShIHCi2dm3sHZcAQizNH2QGEAvkKI6lYO2ZNb0f3NZUaLTlQxjfyVzGRHMbqg/exec';
-    const AUTH = { mom: '1234', manager: '5678', admin: '9999' };
+    const AUTH = { executor: '1234', manager: '5678', admin: '9999' };
     
     let currentUser = null;
     let currentRole = null;
     let allProducts = [];
     let allDeliveries = [];
 
-    // API CALL
+    // API CALL через proxy
     async function apiCall(action, params = {}) {
-      const url = new URL(API_URL);
-      url.searchParams.append('action', action);
-      Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-      
       try {
+        const url = new URL('/api/proxy', window.location.origin);
+        url.searchParams.append('action', action);
+        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+        
         const response = await fetch(url.toString());
         const result = await response.json();
         return result;
@@ -159,12 +158,11 @@
     }
 
     async function apiPost(action, data) {
-      const url = `${API_URL}?action=${action}`;
       try {
-        const response = await fetch(url, {
+        const response = await fetch('/api/proxy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify({ action, data })
         });
         const result = await response.json();
         return result;
