@@ -11,10 +11,27 @@ export default async function handler(req, res) {
   
   try {
     const { action, data } = req.method === 'POST' ? req.body : { action: req.query.action };
-    
+
+    if (!action) {
+      return res.status(400).json({ error: 'Missing action parameter' });
+    }
+
     const url = new URL(GOOGLE_API);
     url.searchParams.append('action', action);
-    
+
+    // Forward any additional query parameters (e.g. delivery id) to the Google Apps Script
+    if (req.method === 'GET' && req.query) {
+      Object.entries(req.query).forEach(([key, value]) => {
+        if (key === 'action') return;
+
+        if (Array.isArray(value)) {
+          value.forEach(v => url.searchParams.append(key, v));
+        } else if (value !== undefined) {
+          url.searchParams.append(key, value);
+        }
+      });
+    }
+
     const options = {
       method: req.method,
       headers: { 'Content-Type': 'application/json' }
