@@ -40,4 +40,110 @@
           
           <div>
             <button class="role-button" onclick="document.getElementById('loginRole').value='admin'; document.getElementById('passwordInput').focus()">🔧 admin (you)</button>
-            <input type="password" class="password-input" placeholder="password" onkeypress="if(event.key==='Enter') loginUser
+            <input type="password" class="password-input" placeholder="password" onkeypress="if(event.key==='Enter') loginUser('admin', this.value)">
+          </div>
+        </div>
+        
+        <input type="hidden" id="loginRole">
+      </div>
+    </div>
+
+    <!-- Home Page (for mom & manager) -->
+    <div data-page="home">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1>Deliveries</h1>
+        <button onclick="showPage('new-delivery')" id="newDeliveryBtn">+ new delivery</button>
+      </div>
+      <div id="deliveriesList"></div>
+    </div>
+
+    <!-- New Delivery Page -->
+    <div data-page="new-delivery">
+      <h1>Create Delivery</h1>
+      <button onclick="showPage('home')" class="secondary">← back</button>
+      
+      <div class="new-delivery-form">
+        <div class="form-row">
+          <label>date:</label>
+          <input type="date" id="deliveryDate">
+        </div>
+        
+        <h3 style="margin-top: 20px; margin-bottom: 15px;">products:</h3>
+        <div id="deliveryItemsList" class="delivery-items"></div>
+        
+        <button onclick="createDelivery()" style="margin-top: 20px; width: 100%;">save delivery</button>
+      </div>
+    </div>
+
+    <!-- Admin Page -->
+    <div data-page="admin">
+      <h1>Admin Panel</h1>
+      <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <button onclick="showPage('admin-products')">products</button>
+        <button class="secondary" onclick="showPage('admin-log')">audit log</button>
+      </div>
+    </div>
+
+    <!-- Admin Products -->
+    <div data-page="admin-products">
+      <h1>Manage Products</h1>
+      <button onclick="showPage('admin')" class="secondary">← back</button>
+      
+      <div style="margin-top: 20px; margin-bottom: 20px;">
+        <h3>Edit prices:</h3>
+        <div id="productsList"></div>
+      </div>
+      
+      <button onclick="showAddProduct()" style="width: 100%; margin-top: 20px;">+ add new product</button>
+    </div>
+
+    <!-- Admin Audit Log -->
+    <div data-page="admin-log">
+      <h1>Audit Log</h1>
+      <button onclick="showPage('admin')" class="secondary">← back</button>
+      <div id="auditLogList" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Manager View (Read-only) -->
+    <div data-page="manager">
+      <div class="manager-view">
+        ℹ️ you have read-only access to deliveries
+      </div>
+      <h1>Deliveries</h1>
+      <div id="deliveriesList"></div>
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Login helper
+    function loginUser(role, password) {
+      if (login(role, password)) {
+        document.getElementById('header').style.display = 'block';
+        document.getElementById('roleDisplay').textContent = role.toUpperCase();
+        if (role === 'manager') {
+          showPage('manager');
+        } else if (role === 'mom') {
+          showPage('home');
+        } else if (role === 'admin') {
+          showPage('admin');
+        }
+      }
+    }
+
+    // Set today's date by default
+    window.addEventListener('DOMContentLoaded', () => {
+      const today = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('deliveryDate');
+      if (dateInput) dateInput.value = today;
+      
+      if (checkAuth()) {
+        document.getElementById('header').style.display = 'block';
+        document.getElementById('roleDisplay').textContent = currentRole.toUpperCase();
+      }
+    });
+  </script>
+</body>
+</html>
