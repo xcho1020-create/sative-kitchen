@@ -34,7 +34,8 @@
     .role-box button { width: 100%; }
     .delivery-card { background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .delivery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .delivery-date { font-weight: 600; font-size: 16px; }
+    .delivery-date { font-weight: 600; font-size: 16px; cursor: pointer; color: #1a7f8f; }
+    .delivery-date:hover { text-decoration: underline; }
     .delivery-actions { display: flex; gap: 8px; }
     .delivery-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; font-size: 14px; }
     .delivery-totals div { display: flex; flex-direction: column; }
@@ -53,6 +54,14 @@
     .admin-products .product-prices { display: flex; gap: 10px; }
     .admin-products .product-prices input { width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
     .loading { text-align: center; padding: 40px; color: #7f8c8d; }
+    
+    /* NEW STYLES FOR DELIVERY DETAIL */
+    .detail-summary { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .detail-summary h3 { margin-bottom: 15px; font-size: 18px; }
+    .product-detail-item { background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .product-detail-item h4 { margin-bottom: 8px; font-size: 16px; }
+    .product-detail-item .info { display: flex; gap: 20px; margin-bottom: 10px; color: #7f8c8d; font-size: 14px; }
+    .product-detail-item input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100px; }
   </style>
 </head>
 <body>
@@ -136,6 +145,18 @@
       <button onclick="showPage('admin')" class="secondary" style="margin-bottom: 20px;">← back</button>
       <div id="auditLogList"></div>
     </div>
+
+    <!-- NEW: Delivery Detail Page -->
+    <div data-page="delivery-detail">
+      <button onclick="showPage('home')" class="secondary" style="margin-bottom: 20px;">← back</button>
+      <h1 id="deliveryDetailTitle">delivery details</h1>
+      
+      <div id="deliveryDetailSummary"></div>
+      <h3 style="margin: 20px 0 10px;">products:</h3>
+      <div id="deliveryDetailProducts"></div>
+      
+      <button onclick="saveDeliveryChanges()" id="saveChangesBtn" style="width: 100%; margin-top: 20px; display: none;">save changes</button>
+    </div>
   </div>
 
   <script>
@@ -146,6 +167,8 @@
     let currentRole = null;
     let allProducts = [];
     let allDeliveries = [];
+    let currentDeliveryId = null;  // NEW
+    let hasChanges = false;  // NEW
 
     // API CALL через proxy
     async function apiCall(action, params = {}) {
@@ -231,11 +254,10 @@
       const html = result.data.reverse().map(d => `
         <div class="delivery-card">
           <div class="delivery-header">
-            <div class="delivery-date">${d.date}</div>
+            <div class="delivery-date" onclick="viewDelivery(${d.id})">${d.date}</div>
             ${currentRole === 'executor' ? `
               <div class="delivery-actions">
-                <button class="edit-btn" onclick="editDelivery(${d.id})">edit</button>
-                <button class="danger" onclick="deleteDelivery(${d.id})">delete</button>
+                <button class="danger" onclick="event.stopPropagation(); deleteDelivery(${d.id})">delete</button>
               </div>
             ` : ''}
           </div>
@@ -273,10 +295,112 @@
       }
     }
 
-    // EDIT DELIVERY (заглушка - можно доработать)
-    function editDelivery(id) {
-      alert('edit functionality coming soon');
-      // TODO: implement edit
+    // NEW: VIEW DELIVERY DETAIL
+    async function viewDelivery(id) {
+      currentDeliveryId = id;
+      hasChanges = false;
+      showPage('delivery-detail');
+      
+      document.getElementById('deliveryDetailProducts').innerHTML = '<div class="loading">loading...</div>';
+      
+      const result = await apiCall('getDelivery', { id });
+      
+      if (!result.success || !result.data) {
+        alert('error loading delivery');
+        showPage('home');
+        return;
+      }
+      
+      const delivery = result.data;
+      
+      // Заголовок
+      document.getElementById('deliveryDetailTitle').textContent = `Delivery ${delivery.date}`;
+      
+      // Итого
+      document.getElementById('deliveryDetailSummary').innerHTML = `
+        <div class="detail-summary">
+          <h3>Summary</h3>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+            <div>
+              <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>
+              <strong>${(delivery.total_cost || 0).toFixed(2)}₾</strong>
+            </div>
+            <div>
+              <span style="color: #7f8c8d; font-size: 12px;">sell price</span><br>
+              <strong class="sell-positive">${(delivery.total_sell || 0).toFixed(2)}₾</strong>
+            </div>
+            <div>
+              <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
+              <strong class="margin-positive">${(delivery.margin || 0).toFixed(2)}₾</strong>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Список продуктов
+      const canEdit = currentRole === 'executor';
+      
+      const html = delivery.items.map(item => {
+        let itemHtml = `
+          <div class="product-detail-item">
+            <h4>${item.product_name}</h4>
+            <div class="info">
+              <span>${item.quantity} ${item.unit}</span>
+              ${currentRole !== 'manager' ? `<span>Cost: ${item.cost_price.toFixed(1)}₾</span>` : ''}
+              <span>Sell: ${item.sell_price.toFixed(1)}₾</span>
+            </div>
+        `;
+        
+        if (canEdit) {
+          itemHtml += `
+            <div style="margin-top: 10px;">
+              <label style="font-size: 13px;">quantity:</label>
+              <input type="number" step="0.5" min="0" value="${item.quantity}" 
+                     data-item-id="${item.id}" onchange="markAsChanged()">
+            </div>
+          `;
+        }
+        
+        itemHtml += `</div>`;
+        return itemHtml;
+      }).join('');
+      
+      document.getElementById('deliveryDetailProducts').innerHTML = html;
+      document.getElementById('saveChangesBtn').style.display = canEdit ? 'block' : 'none';
+    }
+
+    // NEW: Mark as changed
+    function markAsChanged() {
+      hasChanges = true;
+    }
+
+    // NEW: Save delivery changes
+    async function saveDeliveryChanges() {
+      if (!hasChanges) {
+        alert('no changes to save');
+        return;
+      }
+      
+      const items = [];
+      document.querySelectorAll('.product-detail-item input').forEach(input => {
+        items.push({
+          id: parseInt(input.dataset.itemId),
+          quantity: parseFloat(input.value) || 0
+        });
+      });
+      
+      const result = await apiPost('updateDelivery', {
+        id: currentDeliveryId,
+        items: items
+      });
+      
+      if (result.success) {
+        alert('changes saved!');
+        hasChanges = false;
+        viewDelivery(currentDeliveryId);
+      } else {
+        alert('error: ' + (result.error || 'unknown'));
+      }
     }
 
     // LOAD PRODUCTS FOR FORM
