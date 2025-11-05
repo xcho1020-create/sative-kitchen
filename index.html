@@ -76,31 +76,27 @@
   </header>
 
   <div class="container">
-    <!-- Login Page -->
-    <div data-page="login">
-      <div class="login-container">
-        <h1>sative kitchen</h1>
-        <p>select role & enter password</p>
-        <div class="login-roles">
-          <div class="role-box">
-            <h3>👩 executor</h3>
-            <input type="password" id="pwd-executor" placeholder="enter password">
-            <button class="primary" onclick="loginUser('executor')">login</button>
-          </div>
-          <div class="role-box">
-            <h3>👨 manager (cafe)</h3>
-            <input type="password" id="pwd-manager" placeholder="enter password">
-            <button class="primary" onclick="loginUser('manager')">login</button>
-          </div>
-          <div class="role-box">
-            <h3>🔧 admin (you)</h3>
-            <input type="password" id="pwd-admin" placeholder="enter password">
-            <button class="primary" onclick="loginUser('admin')">login</button>
-          </div>
-        </div>
-      </div>
+<!-- Login Page -->
+<div data-page="login">
+  <div class="login-container">
+    <h1>sative kitchen</h1>
+    <p>select your role</p>
+    
+    <div id="roleButtons" style="display: grid; gap: 15px;">
+      <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('executor')">executor</button>
+      <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('manager')">manager</button>
+      <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('admin')">admin</button>
     </div>
-
+    
+    <div id="passwordPanel" style="display: none; margin-top: 30px;">
+      <h3 id="selectedRoleName" style="font-size: 18px; margin-bottom: 15px; text-align: center;"></h3>
+      <input type="password" id="rolePassword" placeholder="enter password" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 14px;">
+      <button class="primary" onclick="loginWithPassword()" style="width: 100%;">login</button>
+      <button class="secondary" onclick="backToRoles()" style="width: 100%; margin-top: 10px;">← back</button>
+    </div>
+  </div>
+</div>
+    
     <!-- Home Page (Executor & Manager) -->
     <div data-page="home">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -201,8 +197,45 @@
       }
     }
 
-    // AUTH
-    function loginUser(role) {
+// AUTH
+let selectedRole = null;
+
+function selectRole(role) {
+  selectedRole = role;
+  document.getElementById('roleButtons').style.display = 'none';
+  document.getElementById('passwordPanel').style.display = 'block';
+  document.getElementById('selectedRoleName').textContent = role;
+  document.getElementById('rolePassword').value = '';
+  document.getElementById('rolePassword').focus();
+}
+
+function backToRoles() {
+  selectedRole = null;
+  document.getElementById('roleButtons').style.display = 'grid';
+  document.getElementById('passwordPanel').style.display = 'none';
+}
+
+function loginWithPassword() {
+  const pwd = document.getElementById('rolePassword').value;
+  if (AUTH[selectedRole] === pwd) {
+    currentUser = selectedRole;
+    currentRole = selectedRole;
+    sessionStorage.setItem('userRole', selectedRole);
+    document.getElementById('header').style.display = 'block';
+    document.getElementById('roleDisplay').textContent = selectedRole;
+    
+    if (selectedRole === 'admin') {
+      showPage('admin');
+    } else {
+      showPage('home');
+      loadDeliveries();
+    }
+  } else {
+    alert('invalid password');
+    document.getElementById('rolePassword').value = '';
+  }
+}
+
       const pwd = document.getElementById(`pwd-${role}`).value;
       if (AUTH[role] === pwd) {
         currentUser = role;
@@ -221,9 +254,11 @@
       }
     }
 
-    function logout() {
-      currentUser = null;
-      currentRole = null;
+function logout() {
+  currentUser = null;
+  currentRole = null;
+  sessionStorage.removeItem('userRole');
+
       document.getElementById('header').style.display = 'none';
       showPage('login');
     }
@@ -261,21 +296,22 @@
               </div>
             ` : ''}
           </div>
-          <div class="delivery-totals">   <div>     <span>cost price</span>     <span>${(d.total_cost || 0).toFixed(2)}₾</span>   </div>   <div>     <span>sell price</span>     <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>   </div>   ${currentRole !== 'manager' ? `     <div>       <span>margin</span>       <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>     </div>   ` : ''} </div>
-            <div>
-              <span>cost price</span>
-              <span>${(d.total_cost || 0).toFixed(2)}₾</span>
-            </div>
-            <div>
-              <span>sell price</span>
-              <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>
-            </div>
-            <div>
-              <span>margin</span>
-              <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>
-            </div>
-          </div>
-        </div>
+            <div class="delivery-totals">
+              <div>
+                <span>cost price</span>
+                <span>${(d.total_cost || 0).toFixed(2)}₾</span>
+              </div>
+              <div>
+                <span>sell price</span>
+                <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>
+              </div>
+              ${currentRole !== 'manager' ? `
+              <div>
+                <span>margin</span>
+                <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>
+              </div>
+              ` : ''}
+</div>
       `).join('');
       
       document.getElementById('deliveriesList').innerHTML = html;
@@ -541,8 +577,49 @@
       document.getElementById('auditLogList').innerHTML = html;
     }
 
-    // INIT
-    window.addEventListener('DOMContentLoaded', () => {
+// INIT
+window.addEventListener('DOMContentLoaded', () => {
+  // Auto-login from sessionStorage
+  const savedRole = sessionStorage.getItem('userRole');
+  if (savedRole && AUTH[savedRole]) {
+    currentUser = savedRole;
+    currentRole = savedRole;
+    document.getElementById('header').style.display = 'block';
+    document.getElementById('roleDisplay').textContent = savedRole;
+    
+    if (savedRole === 'admin') {
+      showPage('admin');
+    } else {
+      showPage('home');
+      loadDeliveries();
+    }
+  } else {
+    showPage('login');
+  }
+  
+  const tbilisiOffset = 4 * 60 * 60 * 1000;
+  const today = new Date(Date.now() + tbilisiOffset).toISOString().split('T')[0];
+  const dateInput = document.getElementById('deliveryDate');
+  if (dateInput) dateInput.value = today;
+  
+  const observer = new MutationObserver(() => {
+    const adminProducts = document.querySelector('[data-page="admin-products"]');
+    const adminLog = document.querySelector('[data-page="admin-log"]');
+    
+    if (adminProducts && adminProducts.style.display === 'block' && !adminProducts.dataset.loaded) {
+      adminProducts.dataset.loaded = 'true';
+      loadAdminProducts();
+    }
+    
+    if (adminLog && adminLog.style.display === 'block' && !adminLog.dataset.loaded) {
+      adminLog.dataset.loaded = 'true';
+      loadAuditLog();
+    }
+  });
+  
+  observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style'] });
+});
+
       const today = new Date(new Date().getTime() + (4 * 60 * 60 * 1000)).toISOString().split('T')[0];
       const dateInput = document.getElementById('deliveryDate');
       if (dateInput) dateInput.value = today;
