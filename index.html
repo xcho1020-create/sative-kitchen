@@ -27,11 +27,6 @@
     .login-container { max-width: 400px; margin: 60px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .login-container h1 { font-size: 28px; margin-bottom: 10px; text-align: center; }
     .login-container p { text-align: center; margin-bottom: 30px; color: #7f8c8d; font-size: 14px; }
-    .login-roles { display: grid; gap: 20px; }
-    .role-box { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; }
-    .role-box h3 { font-size: 16px; margin-bottom: 10px; color: #2c3e50; }
-    .role-box input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 14px; }
-    .role-box button { width: 100%; }
     .delivery-card { background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .delivery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .delivery-date { font-weight: 600; font-size: 16px; cursor: pointer; color: #1a7f8f; }
@@ -54,8 +49,6 @@
     .admin-products .product-prices { display: flex; gap: 10px; }
     .admin-products .product-prices input { width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
     .loading { text-align: center; padding: 40px; color: #7f8c8d; }
-    
-    /* NEW STYLES FOR DELIVERY DETAIL */
     .detail-summary { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .detail-summary h3 { margin-bottom: 15px; font-size: 18px; }
     .product-detail-item { background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -80,28 +73,24 @@
     <div data-page="login">
       <div class="login-container">
         <h1>sative kitchen</h1>
-        <p>select role & enter password</p>
-        <div class="login-roles">
-          <div class="role-box">
-            <h3>👩 executor</h3>
-            <input type="password" id="pwd-executor" placeholder="enter password">
-            <button class="primary" onclick="loginUser('executor')">login</button>
-          </div>
-          <div class="role-box">
-            <h3>👨 manager (cafe)</h3>
-            <input type="password" id="pwd-manager" placeholder="enter password">
-            <button class="primary" onclick="loginUser('manager')">login</button>
-          </div>
-          <div class="role-box">
-            <h3>🔧 admin (you)</h3>
-            <input type="password" id="pwd-admin" placeholder="enter password">
-            <button class="primary" onclick="loginUser('admin')">login</button>
-          </div>
+        <p>select your role</p>
+        
+        <div id="roleButtons" style="display: grid; gap: 15px;">
+          <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('executor')">executor</button>
+          <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('manager')">manager</button>
+          <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('admin')">admin</button>
+        </div>
+        
+        <div id="passwordPanel" style="display: none; margin-top: 30px;">
+          <h3 id="selectedRoleName" style="font-size: 18px; margin-bottom: 15px; text-align: center;"></h3>
+          <input type="password" id="rolePassword" placeholder="enter password" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 14px;">
+          <button class="primary" onclick="loginWithPassword()" style="width: 100%;">login</button>
+          <button class="secondary" onclick="backToRoles()" style="width: 100%; margin-top: 10px;">← back</button>
         </div>
       </div>
     </div>
 
-    <!-- Home Page (Executor & Manager) -->
+    <!-- Home Page -->
     <div data-page="home">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h1>deliveries</h1>
@@ -146,7 +135,7 @@
       <div id="auditLogList"></div>
     </div>
 
-    <!-- NEW: Delivery Detail Page -->
+    <!-- Delivery Detail Page -->
     <div data-page="delivery-detail">
       <button onclick="showPage('home')" class="secondary" style="margin-bottom: 20px;">← back</button>
       <h1 id="deliveryDetailTitle">delivery details</h1>
@@ -167,10 +156,11 @@
     let currentRole = null;
     let allProducts = [];
     let allDeliveries = [];
-    let currentDeliveryId = null;  // NEW
-    let hasChanges = false;  // NEW
+    let currentDeliveryId = null;
+    let hasChanges = false;
+    let selectedRole = null;
 
-    // API CALL через proxy
+    // API CALL
     async function apiCall(action, params = {}) {
       try {
         const url = new URL('/api/proxy', window.location.origin);
@@ -202,15 +192,31 @@
     }
 
     // AUTH
-    function loginUser(role) {
-      const pwd = document.getElementById(`pwd-${role}`).value;
-      if (AUTH[role] === pwd) {
-        currentUser = role;
-        currentRole = role;
+    function selectRole(role) {
+      selectedRole = role;
+      document.getElementById('roleButtons').style.display = 'none';
+      document.getElementById('passwordPanel').style.display = 'block';
+      document.getElementById('selectedRoleName').textContent = role;
+      document.getElementById('rolePassword').value = '';
+      document.getElementById('rolePassword').focus();
+    }
+
+    function backToRoles() {
+      selectedRole = null;
+      document.getElementById('roleButtons').style.display = 'grid';
+      document.getElementById('passwordPanel').style.display = 'none';
+    }
+
+    function loginWithPassword() {
+      const pwd = document.getElementById('rolePassword').value;
+      if (AUTH[selectedRole] === pwd) {
+        currentUser = selectedRole;
+        currentRole = selectedRole;
+        sessionStorage.setItem('userRole', selectedRole);
         document.getElementById('header').style.display = 'block';
-        document.getElementById('roleDisplay').textContent = role.toUpperCase();
+        document.getElementById('roleDisplay').textContent = selectedRole;
         
-        if (role === 'admin') {
+        if (selectedRole === 'admin') {
           showPage('admin');
         } else {
           showPage('home');
@@ -218,12 +224,14 @@
         }
       } else {
         alert('invalid password');
+        document.getElementById('rolePassword').value = '';
       }
     }
 
     function logout() {
       currentUser = null;
       currentRole = null;
+      sessionStorage.removeItem('userRole');
       document.getElementById('header').style.display = 'none';
       showPage('login');
     }
@@ -234,7 +242,6 @@
       const target = document.querySelector(`[data-page="${page}"]`);
       if (target) target.style.display = 'block';
       
-      // Hide new delivery button for manager
       const newBtn = document.getElementById('newBtn');
       if (newBtn) newBtn.style.display = currentRole === 'manager' ? 'none' : 'block';
     }
@@ -261,7 +268,7 @@
               </div>
             ` : ''}
           </div>
-          <div class="delivery-totals">   <div>     <span>cost price</span>     <span>${(d.total_cost || 0).toFixed(2)}₾</span>   </div>   <div>     <span>sell price</span>     <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>   </div>   ${currentRole !== 'manager' ? `     <div>       <span>margin</span>       <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>     </div>   ` : ''} </div>
+          <div class="delivery-totals">
             <div>
               <span>cost price</span>
               <span>${(d.total_cost || 0).toFixed(2)}₾</span>
@@ -270,10 +277,12 @@
               <span>sell price</span>
               <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>
             </div>
+            ${currentRole !== 'manager' ? `
             <div>
               <span>margin</span>
               <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>
             </div>
+            ` : ''}
           </div>
         </div>
       `).join('');
@@ -295,7 +304,7 @@
       }
     }
 
-    // NEW: VIEW DELIVERY DETAIL
+    // VIEW DELIVERY DETAIL
     async function viewDelivery(id) {
       currentDeliveryId = id;
       hasChanges = false;
@@ -313,14 +322,13 @@
       
       const delivery = result.data;
       
-      // Заголовок
-      const cleanDate = delivery.date ? delivery.date.split('T')[0] : 'No date'; document.getElementById('deliveryDetailTitle').textContent = `Delivery ${cleanDate}`;
+      const cleanDate = delivery.date ? delivery.date.split('T')[0] : 'No date';
+      document.getElementById('deliveryDetailTitle').textContent = `Delivery ${cleanDate}`;
       
-      // Итого
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
           <h3>Summary</h3>
-          <div style="display: grid; grid-template-columns: ${currentRole === 'manager' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'}; gap: 15px;">   <div>     <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>     <strong>${(delivery.total_cost || 0).toFixed(2)}₾</strong>   </div>   <div>     <span style="color: #7f8c8d; font-size: 12px;">sell price</span><br>     <strong class="sell-positive">${(delivery.total_sell || 0).toFixed(2)}₾</strong>   </div>   ${currentRole !== 'manager' ? `     <div>       <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>       <strong class="margin-positive">${(delivery.margin || 0).toFixed(2)}₾</strong>     </div>   ` : ''} </div>
+          <div style="display: grid; grid-template-columns: ${currentRole === 'manager' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'}; gap: 15px;">
             <div>
               <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>
               <strong>${(delivery.total_cost || 0).toFixed(2)}₾</strong>
@@ -329,15 +337,16 @@
               <span style="color: #7f8c8d; font-size: 12px;">sell price</span><br>
               <strong class="sell-positive">${(delivery.total_sell || 0).toFixed(2)}₾</strong>
             </div>
+            ${currentRole !== 'manager' ? `
             <div>
               <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
               <strong class="margin-positive">${(delivery.margin || 0).toFixed(2)}₾</strong>
             </div>
+            ` : ''}
           </div>
         </div>
       `;
       
-      // Список продуктов
       const canEdit = currentRole === 'executor';
       
       const html = delivery.items.map(item => {
@@ -369,12 +378,10 @@
       document.getElementById('saveChangesBtn').style.display = canEdit ? 'block' : 'none';
     }
 
-    // NEW: Mark as changed
     function markAsChanged() {
       hasChanges = true;
     }
 
-    // NEW: Save delivery changes
     async function saveDeliveryChanges() {
       if (!hasChanges) {
         alert('no changes to save');
@@ -543,11 +550,29 @@
 
     // INIT
     window.addEventListener('DOMContentLoaded', () => {
-      const today = new Date(new Date().getTime() + (4 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      // Auto-login from sessionStorage
+      const savedRole = sessionStorage.getItem('userRole');
+      if (savedRole && AUTH[savedRole]) {
+        currentUser = savedRole;
+        currentRole = savedRole;
+        document.getElementById('header').style.display = 'block';
+        document.getElementById('roleDisplay').textContent = savedRole;
+        
+        if (savedRole === 'admin') {
+          showPage('admin');
+        } else {
+          showPage('home');
+          loadDeliveries();
+        }
+      } else {
+        showPage('login');
+      }
+      
+      // Tbilisi timezone UTC+4
+      const tbilisiOffset = 4 * 60 * 60 * 1000;
+      const today = new Date(Date.now() + tbilisiOffset).toISOString().split('T')[0];
       const dateInput = document.getElementById('deliveryDate');
       if (dateInput) dateInput.value = today;
-      
-      showPage('login');
       
       // Admin page load handlers
       const observer = new MutationObserver(() => {
