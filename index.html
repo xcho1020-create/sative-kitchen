@@ -261,7 +261,7 @@
               </div>
             ` : ''}
           </div>
-          <div class="delivery-totals">
+          <div class="delivery-totals">   <div>     <span>cost price</span>     <span>${(d.total_cost || 0).toFixed(2)}₾</span>   </div>   <div>     <span>sell price</span>     <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>   </div>   ${currentRole !== 'manager' ? `     <div>       <span>margin</span>       <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>     </div>   ` : ''} </div>
             <div>
               <span>cost price</span>
               <span>${(d.total_cost || 0).toFixed(2)}₾</span>
@@ -320,7 +320,7 @@
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
           <h3>Summary</h3>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+          <div style="display: grid; grid-template-columns: ${currentRole === 'manager' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'}; gap: 15px;">   <div>     <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>     <strong>${(delivery.total_cost || 0).toFixed(2)}₾</strong>   </div>   <div>     <span style="color: #7f8c8d; font-size: 12px;">sell price</span><br>     <strong class="sell-positive">${(delivery.total_sell || 0).toFixed(2)}₾</strong>   </div>   ${currentRole !== 'manager' ? `     <div>       <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>       <strong class="margin-positive">${(delivery.margin || 0).toFixed(2)}₾</strong>     </div>   ` : ''} </div>
             <div>
               <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>
               <strong>${(delivery.total_cost || 0).toFixed(2)}₾</strong>
@@ -543,7 +543,7 @@
 
     // INIT
     window.addEventListener('DOMContentLoaded', () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date(new Date().getTime() + (4 * 60 * 60 * 1000)).toISOString().split('T')[0];
       const dateInput = document.getElementById('deliveryDate');
       if (dateInput) dateInput.value = today;
       
