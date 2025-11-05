@@ -593,5 +593,15 @@
       observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style'] });
     });
   </script>
+
+  <!-- Manager Page -->
+  <div data-page="manager">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+      <h1>manager dashboard</h1>
+      <button onclick="showNewDelivery()" id="newBtn">+ new delivery</button>
+    </div>
+    <div id="deliveriesList" class="loading">loading...</div>
+  </div>
+
 </body>
 </html>
