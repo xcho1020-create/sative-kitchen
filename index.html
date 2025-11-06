@@ -160,21 +160,22 @@
     let allProducts = [];
     let allDeliveries = [];
     let currentDeliveryId = null;
+    let currentDelivery = null;
     let hasChanges = false;
     let selectedRole = null;
 
-    const TBILISI_OFFSET_MINUTES = 4 * 60;
+    const nowTbs = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tbilisi' }));
+    const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
     function formatDate(value) {
-      if (!value) return 'No date';
+      return value || 'No date';
+    }
 
-      const parsed = new Date(value);
-      if (Number.isNaN(parsed.getTime())) {
-        return value;
-      }
+    const round2 = value => Math.round((Number(value) || 0) * 100) / 100;
 
-      const adjusted = new Date(parsed.getTime() + TBILISI_OFFSET_MINUTES * 60 * 1000);
-      return adjusted.toISOString().split('T')[0];
+    function formatQuantity(value) {
+      const number = Number(value) || 0;
+      return Number.isInteger(number) ? number.toString() : number.toFixed(2);
     }
 
     function formatCurrency(value, digits = 2) {
@@ -348,35 +349,23 @@
       
       const delivery = result.data;
       
-      const cleanDate = formatDate(delivery.date);
-      document.getElementById('deliveryDetailTitle').textContent = `Delivery ${cleanDate}`;
+      currentDelivery = {
+        ...delivery,
+        items: (delivery.items || []).map(item => ({
+          ...item,
+          quantity: Number(item.quantity) || 0,
+          cost_price: Number(item.cost_price) || 0,
+          sell_price: Number(item.sell_price) || 0
+        }))
+      };
 
-      document.getElementById('deliveryDetailSummary').innerHTML = `
-        <div class="detail-summary">
-          <h3>Summary</h3>
-          <div style="display: grid; grid-template-columns: ${currentRole === 'manager' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'}; gap: 15px;">
-            <div>
-              <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>
-              <strong>${(delivery.total_cost || 0).toFixed(2)}₾</strong>
-            </div>
-            <div>
-              <span style="color: #7f8c8d; font-size: 12px;">sell price</span><br>
-              <strong class="sell-positive">${(delivery.total_sell || 0).toFixed(2)}₾</strong>
-            </div>
-            ${currentRole !== 'manager' ? `
-            <div>
-              <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
-              <strong class="margin-positive">${(delivery.margin || 0).toFixed(2)}₾</strong>
-            </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
+      const cleanDate = formatDate(currentDelivery.date);
+      document.getElementById('deliveryDetailTitle').textContent = `Delivery ${cleanDate}`;
 
       const noticeEl = document.getElementById('deliveryEditNotice');
       if (noticeEl) {
-        if (currentRole === 'executor') {
-          noticeEl.textContent = 'Editing deliveries after submission is temporarily disabled because it caused errors in Google Sheets.';
+        if (currentDelivery.status === 'completed') {
+          noticeEl.textContent = 'editing of submitted deliveries is disabled. create a new delivery if updates are needed';
           noticeEl.style.display = 'block';
         } else {
           noticeEl.textContent = '';
@@ -384,58 +373,157 @@
         }
       }
 
-      const canEdit = false; // editing disabled because it caused Google Sheets errors
+      const canEdit = currentRole === 'executor' && currentDelivery.status !== 'completed';
 
-      const html = delivery.items.map(item => {
-        const quantity = Number(item.quantity) || 0;
-        const costPrice = Number(item.cost_price) || 0;
-        const sellPrice = Number(item.sell_price) || 0;
-        const totalCost = quantity * costPrice;
-        const totalSell = quantity * sellPrice;
-
-        let itemHtml = `
-          <div class="product-detail-item">
-            <h4>${item.product_name}</h4>
-            <div class="info">
-              <span>${quantity} ${item.unit}</span>
-              ${currentRole !== 'manager' ? `<span>Cost: ${formatCurrency(costPrice, 1)}₾</span>` : ''}
-              <span>Sell: ${formatCurrency(sellPrice, 1)}₾</span>
-            </div>
-            <div class="info">
-              ${currentRole !== 'manager' ? `<span>Total cost: ${formatCurrency(totalCost)}₾</span>` : ''}
-              <span>Total sell: ${formatCurrency(totalSell)}₾</span>
-            </div>
-        `;
-
-        if (canEdit) {
-          itemHtml += `
-            <div style="margin-top: 10px;">
-              <label style="font-size: 13px;">quantity:</label>
-              <input type="number" step="0.5" min="0" value="${item.quantity}" 
-                     data-item-id="${item.id}" onchange="markAsChanged()">
-            </div>
-          `;
-        }
-        
-        itemHtml += `</div>`;
-        return itemHtml;
-      }).join('');
-
-      document.getElementById('deliveryDetailProducts').innerHTML = html;
+      renderDeliverySummary();
+      renderDeliveryItems(canEdit);
       document.getElementById('saveChangesBtn').style.display = canEdit ? 'block' : 'none';
     }
 
-    function markAsChanged() {
+    function renderDeliverySummary() {
+      if (!currentDelivery) return;
+
+      const totals = currentDelivery.items.reduce((acc, item) => {
+        const quantity = Number(item.quantity) || 0;
+        const costPrice = Number(item.cost_price) || 0;
+        const sellPrice = Number(item.sell_price) || 0;
+
+        acc.totalCost += quantity * costPrice;
+        acc.totalSell += quantity * sellPrice;
+        return acc;
+      }, { totalCost: 0, totalSell: 0 });
+
+      totals.totalCost = round2(totals.totalCost);
+      totals.totalSell = round2(totals.totalSell);
+      const margin = round2(totals.totalSell - totals.totalCost);
+
+      document.getElementById('deliveryDetailSummary').innerHTML = `
+        <div class="detail-summary">
+          <h3>Summary</h3>
+          <div style="display: grid; grid-template-columns: ${currentRole === 'manager' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'}; gap: 15px;">
+            <div>
+              <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>
+              <strong>${formatCurrency(totals.totalCost)}₾</strong>
+            </div>
+            <div>
+              <span style="color: #7f8c8d; font-size: 12px;">sell price</span><br>
+              <strong class="sell-positive">${formatCurrency(totals.totalSell)}₾</strong>
+            </div>
+            ${currentRole !== 'manager' ? `
+            <div>
+              <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
+              <strong class="margin-positive">${formatCurrency(margin)}₾</strong>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDeliveryItems(canEdit) {
+      if (!currentDelivery) return;
+
+      const html = currentDelivery.items.map((item, index) => {
+        const quantity = Number(item.quantity) || 0;
+        const costPrice = Number(item.cost_price) || 0;
+        const sellPrice = Number(item.sell_price) || 0;
+        const totalCost = round2(quantity * costPrice);
+        const totalSell = round2(quantity * sellPrice);
+
+        return `
+          <div class="product-detail-item" data-index="${index}">
+            <h4>${item.product_name}</h4>
+            <div class="info">
+              <span>${item.unit}</span>
+              <span>cost: ${formatCurrency(costPrice, 1)}₾</span>
+              <span>sell: ${formatCurrency(sellPrice, 1)}₾</span>
+            </div>
+            <div class="info">
+              ${canEdit ? `
+                <label style="font-size: 13px; display: flex; flex-direction: column; gap: 4px;">
+                  quantity:
+                  <input type="number" step="0.5" min="0" value="${quantity}" data-index="${index}" oninput="updateDeliveryQuantity(${index}, this.value)" onchange="updateDeliveryQuantity(${index}, this.value)">
+                </label>
+              ` : `
+                <span data-quantity-display="${index}">quantity: ${formatQuantity(quantity)} ${item.unit}</span>
+              `}
+              <span>Total cost: <strong data-total-cost="${index}">${formatCurrency(totalCost)}</strong>₾</span>
+              <span>Total sell: <strong data-total-sell="${index}">${formatCurrency(totalSell)}</strong>₾</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('deliveryDetailProducts').innerHTML = html;
+    }
+
+    function updateDeliveryQuantity(index, value) {
+      if (!currentDelivery || currentDelivery.status === 'completed') return;
+
+      const quantity = value === '' ? 0 : Math.max(0, parseFloat(value) || 0);
+      if (!Number.isFinite(quantity)) return;
+
+      currentDelivery.items[index].quantity = quantity;
       hasChanges = true;
+
+      const costPrice = Number(currentDelivery.items[index].cost_price) || 0;
+      const sellPrice = Number(currentDelivery.items[index].sell_price) || 0;
+
+      const totalCost = round2(quantity * costPrice);
+      const totalSell = round2(quantity * sellPrice);
+
+      const costEl = document.querySelector(`[data-total-cost="${index}"]`);
+      if (costEl) costEl.textContent = formatCurrency(totalCost);
+
+      const sellEl = document.querySelector(`[data-total-sell="${index}"]`);
+      if (sellEl) sellEl.textContent = formatCurrency(totalSell);
+
+      const quantityDisplay = document.querySelector(`[data-quantity-display="${index}"]`);
+      if (quantityDisplay) {
+        const unit = currentDelivery.items[index].unit || '';
+        quantityDisplay.textContent = `quantity: ${formatQuantity(quantity)} ${unit}`;
+      }
+
+      renderDeliverySummary();
     }
 
     async function saveDeliveryChanges() {
-      alert('Editing deliveries after submission is temporarily disabled. Create a new delivery if updates are needed.');
+      if (!currentDelivery || currentDelivery.status === 'completed') {
+        return;
+      }
+
+      if (!hasChanges) {
+        alert('no changes to save');
+        return;
+      }
+
+      const items = currentDelivery.items.map(item => ({
+        id: parseInt(item.id, 10),
+        quantity: Number(item.quantity) || 0
+      }));
+
+      const result = await apiPost('updateDelivery', {
+        id: currentDeliveryId,
+        items
+      });
+
+      if (result.success) {
+        alert('changes saved!');
+        hasChanges = false;
+        await viewDelivery(currentDeliveryId);
+        if (typeof loadDeliveries === 'function') {
+          loadDeliveries();
+        }
+      } else {
+        alert('error: ' + (result.error || 'unknown'));
+      }
     }
 
     // LOAD PRODUCTS FOR FORM
     async function showNewDelivery() {
       showPage('new-delivery');
+      const dateInput = document.getElementById('deliveryDate');
+      if (dateInput) dateInput.value = ymd(nowTbs());
       document.getElementById('productsForm').innerHTML = '<div class="loading">loading products...</div>';
       
       const result = await apiCall('getProducts');
@@ -467,12 +555,8 @@
 
     // SAVE DELIVERY
     async function saveDelivery() {
-      const date = document.getElementById('deliveryDate').value;
-      if (!date) {
-        alert('select date');
-        return;
-      }
-      
+      const date = ymd(nowTbs());
+
       const items = [];
       document.querySelectorAll('.product-item').forEach(row => {
         const qty = parseFloat(row.querySelector('input').value) || 0;
@@ -592,8 +676,7 @@
       }
       
       // Tbilisi timezone UTC+4
-      const tbilisiOffset = 4 * 60 * 60 * 1000;
-      const today = new Date(Date.now() + tbilisiOffset).toISOString().split('T')[0];
+      const today = ymd(nowTbs());
       const dateInput = document.getElementById('deliveryDate');
       if (dateInput) dateInput.value = today;
       
