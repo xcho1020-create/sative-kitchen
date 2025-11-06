@@ -55,6 +55,8 @@
     .product-detail-item h4 { margin-bottom: 8px; font-size: 16px; }
     .product-detail-item .info { display: flex; gap: 20px; margin-bottom: 10px; color: #7f8c8d; font-size: 14px; }
     .product-detail-item input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100px; }
+    .product-detail-item .info + .info { margin-top: 8px; }
+    .info-note { background: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -142,8 +144,9 @@
       
       <div id="deliveryDetailSummary"></div>
       <h3 style="margin: 20px 0 10px;">products:</h3>
+      <div id="deliveryEditNotice" class="info-note" style="display: none;"></div>
       <div id="deliveryDetailProducts"></div>
-      
+
       <button onclick="saveDeliveryChanges()" id="saveChangesBtn" style="width: 100%; margin-top: 20px; display: none;">save changes</button>
     </div>
   </div>
@@ -159,6 +162,25 @@
     let currentDeliveryId = null;
     let hasChanges = false;
     let selectedRole = null;
+
+    const TBILISI_OFFSET_MINUTES = 4 * 60;
+
+    function formatDate(value) {
+      if (!value) return 'No date';
+
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        return value;
+      }
+
+      const adjusted = new Date(parsed.getTime() + TBILISI_OFFSET_MINUTES * 60 * 1000);
+      return adjusted.toISOString().split('T')[0];
+    }
+
+    function formatCurrency(value, digits = 2) {
+      const number = Number(value) || 0;
+      return number.toFixed(digits);
+    }
 
     // API CALL
     async function apiCall(action, params = {}) {
@@ -258,10 +280,13 @@
       
       allDeliveries = result.data;
       
-      const html = result.data.reverse().map(d => `
+      const html = result.data.reverse().map(d => {
+        const deliveryDate = formatDate(d.date);
+
+        return `
         <div class="delivery-card">
           <div class="delivery-header">
-            <div class="delivery-date" onclick="viewDelivery(${d.id})">${d.date ? d.date.split('T')[0] : 'No date'}</div>
+            <div class="delivery-date" onclick="viewDelivery(${d.id})">${deliveryDate}</div>
             ${currentRole === 'executor' ? `
               <div class="delivery-actions">
                 <button class="danger" onclick="event.stopPropagation(); deleteDelivery(${d.id})">delete</button>
@@ -285,7 +310,8 @@
             ` : ''}
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
       
       document.getElementById('deliveriesList').innerHTML = html;
     }
@@ -322,9 +348,9 @@
       
       const delivery = result.data;
       
-      const cleanDate = delivery.date ? delivery.date.split('T')[0] : 'No date';
+      const cleanDate = formatDate(delivery.date);
       document.getElementById('deliveryDetailTitle').textContent = `Delivery ${cleanDate}`;
-      
+
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
           <h3>Summary</h3>
@@ -346,20 +372,41 @@
           </div>
         </div>
       `;
-      
-      const canEdit = currentRole === 'executor';
-      
+
+      const noticeEl = document.getElementById('deliveryEditNotice');
+      if (noticeEl) {
+        if (currentRole === 'executor') {
+          noticeEl.textContent = 'Editing deliveries after submission is temporarily disabled because it caused errors in Google Sheets.';
+          noticeEl.style.display = 'block';
+        } else {
+          noticeEl.textContent = '';
+          noticeEl.style.display = 'none';
+        }
+      }
+
+      const canEdit = false; // editing disabled because it caused Google Sheets errors
+
       const html = delivery.items.map(item => {
+        const quantity = Number(item.quantity) || 0;
+        const costPrice = Number(item.cost_price) || 0;
+        const sellPrice = Number(item.sell_price) || 0;
+        const totalCost = quantity * costPrice;
+        const totalSell = quantity * sellPrice;
+
         let itemHtml = `
           <div class="product-detail-item">
             <h4>${item.product_name}</h4>
             <div class="info">
-              <span>${item.quantity} ${item.unit}</span>
-              ${currentRole !== 'manager' ? `<span>Cost: ${item.cost_price.toFixed(1)}₾</span>` : ''}
-              <span>Sell: ${item.sell_price.toFixed(1)}₾</span>
+              <span>${quantity} ${item.unit}</span>
+              ${currentRole !== 'manager' ? `<span>Cost: ${formatCurrency(costPrice, 1)}₾</span>` : ''}
+              <span>Sell: ${formatCurrency(sellPrice, 1)}₾</span>
+            </div>
+            <div class="info">
+              ${currentRole !== 'manager' ? `<span>Total cost: ${formatCurrency(totalCost)}₾</span>` : ''}
+              <span>Total sell: ${formatCurrency(totalSell)}₾</span>
             </div>
         `;
-        
+
         if (canEdit) {
           itemHtml += `
             <div style="margin-top: 10px;">
@@ -373,7 +420,7 @@
         itemHtml += `</div>`;
         return itemHtml;
       }).join('');
-      
+
       document.getElementById('deliveryDetailProducts').innerHTML = html;
       document.getElementById('saveChangesBtn').style.display = canEdit ? 'block' : 'none';
     }
@@ -383,31 +430,7 @@
     }
 
     async function saveDeliveryChanges() {
-      if (!hasChanges) {
-        alert('no changes to save');
-        return;
-      }
-      
-      const items = [];
-      document.querySelectorAll('.product-detail-item input').forEach(input => {
-        items.push({
-          id: parseInt(input.dataset.itemId),
-          quantity: parseFloat(input.value) || 0
-        });
-      });
-      
-      const result = await apiPost('updateDelivery', {
-        id: currentDeliveryId,
-        items: items
-      });
-      
-      if (result.success) {
-        alert('changes saved!');
-        hasChanges = false;
-        viewDelivery(currentDeliveryId);
-      } else {
-        alert('error: ' + (result.error || 'unknown'));
-      }
+      alert('Editing deliveries after submission is temporarily disabled. Create a new delivery if updates are needed.');
     }
 
     // LOAD PRODUCTS FOR FORM
