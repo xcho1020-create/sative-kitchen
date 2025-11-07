@@ -158,9 +158,14 @@
   </div>
 
   <script>
-    // CONFIG
+    // ============================================================================
+    // CONFIGURATION & STATE
+    // ============================================================================
+    
+    // Authentication credentials (change these in production)
     const AUTH = { executor: '1234', manager: '5678', admin: '9999' };
     
+    // Application state
     let currentUser = null;
     let currentRole = null;
     let allProducts = [];
@@ -170,6 +175,10 @@
     let hasChanges = false;
     let selectedRole = null;
 
+    // ============================================================================
+    // DATE FORMATTING (Asia/Tbilisi timezone)
+    // ============================================================================
+    
     const TBILISI_TIMEZONE = 'Asia/Tbilisi';
 
     // Date formatter for date-only fields (yyyy-MM-dd)
@@ -247,6 +256,13 @@
       }
     }
 
+    // ============================================================================
+    // UTILITY FUNCTIONS
+    // ============================================================================
+    
+    /**
+     * Normalize payment status to 'paid' or 'unpaid'
+     */
     function normalizePaymentStatus(value) {
       if (value === null || value === undefined) {
         return 'unpaid';
@@ -256,52 +272,98 @@
       return normalized === 'paid' ? 'paid' : 'unpaid';
     }
 
+    /**
+     * Round number to 2 decimal places
+     */
     const round2 = value => Math.round((Number(value) || 0) * 100) / 100;
 
+    /**
+     * Safely convert value to number, returning 0 if invalid
+     */
     const ensureNumber = value => {
       const number = Number(value);
       return Number.isFinite(number) ? number : 0;
     };
 
+    /**
+     * Format quantity (integer or decimal)
+     */
     function formatQuantity(value) {
       const number = Number(value) || 0;
       return Number.isInteger(number) ? number.toString() : number.toFixed(2);
     }
 
+    /**
+     * Format currency value with GEL symbol
+     */
     function formatCurrency(value, digits = 2) {
       const number = Number(value) || 0;
       return number.toFixed(digits);
     }
 
-    // API CALL
-    async function apiCall(action, params = {}) {
+    // ============================================================================
+    // API LAYER
+    // ============================================================================
+    
+    // Centralized API base URL - change this to point to your backend
+    const API_BASE_URL = '/api/proxy';
+
+    /**
+     * Generic fetch wrapper with retry logic.
+     * Retries once on network failure before returning error.
+     * 
+     * @param {string} url - The URL to fetch
+     * @param {object} options - Fetch options (method, headers, body, etc.)
+     * @param {number} retries - Number of retries remaining (default: 1)
+     * @returns {Promise<object>} - JSON response or error object
+     */
+    async function apiFetch(url, options = {}, retries = 1) {
       try {
-        const url = new URL('/api/proxy', window.location.origin);
-        url.searchParams.append('action', action);
-        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-        
-        const response = await fetch(url.toString());
+        const response = await fetch(url, options);
         const result = await response.json();
         return result;
       } catch (error) {
         console.error('API Error:', error);
-        return { error: error.message };
+        
+        // Retry once on network failure
+        if (retries > 0) {
+          console.log(`Retrying API call (${retries} retries left)...`);
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
+          return apiFetch(url, options, retries - 1);
+        }
+        
+        return { success: false, error: error.message };
       }
     }
 
+    /**
+     * GET request with query parameters
+     * 
+     * @param {string} action - API action name
+     * @param {object} params - Query parameters
+     * @returns {Promise<object>} - API response
+     */
+    async function apiCall(action, params = {}) {
+      const url = new URL(API_BASE_URL, window.location.origin);
+      url.searchParams.append('action', action);
+      Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+      
+      return apiFetch(url.toString());
+    }
+
+    /**
+     * POST request with JSON body
+     * 
+     * @param {string} action - API action name
+     * @param {object} data - Request body data
+     * @returns {Promise<object>} - API response
+     */
     async function apiPost(action, data) {
-      try {
-        const response = await fetch('/api/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, data })
-        });
-        const result = await response.json();
-        return result;
-      } catch (error) {
-        console.error('API Error:', error);
-        return { error: error.message };
-      }
+      return apiFetch(API_BASE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, data })
+      });
     }
 
     // AUTH
