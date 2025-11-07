@@ -947,6 +947,40 @@ button.secondary:active {
   font-size: var(--font-size-sm);
 }
 
+.delivery-payment {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  flex-wrap: wrap;
+  margin-top: var(--space-12);
+}
+
+.payment-status {
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.payment-status.paid {
+  color: var(--color-success);
+}
+
+.payment-status.unpaid {
+  color: var(--color-error);
+}
+
+.payment-actions {
+  display: flex;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.payment-actions button {
+  padding: var(--space-6) var(--space-12);
+  font-size: var(--font-size-sm);
+}
+
 /* New Delivery Form */
 .new-delivery-form {
   background: var(--color-surface);

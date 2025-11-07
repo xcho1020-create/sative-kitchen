@@ -72,6 +72,20 @@ function formatDate(value) {
   return normalized || 'No date';
 }
 
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizePaymentStatus(value) {
+  if (value === null || value === undefined) {
+    return 'unpaid';
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === 'paid' ? 'paid' : 'unpaid';
+}
+
 // Auth functions
 function login(role, password) {
   if (AUTH[role] === password) {
@@ -128,22 +142,64 @@ async function loadDeliveries() {
   
   const deliveries = (result.data || []).map(delivery => ({
     ...delivery,
-    date: normalizeDeliveryDate(delivery.date)
+    date: normalizeDeliveryDate(delivery.date),
+    payment_status: normalizePaymentStatus(delivery.payment_status),
+    total_cost: toNumber(delivery.total_cost),
+    total_sell: toNumber(delivery.total_sell),
+    margin: toNumber(delivery.margin)
   }));
 
-  const html = deliveries.map(d => `
+  const html = deliveries.map(d => {
+    const isPaymentPaid = d.payment_status === 'paid';
+    const paymentStatusLabel = isPaymentPaid ? 'paid' : 'unpaid';
+    const canChangePayment = ['executor', 'manager', 'mom'].includes(currentRole);
+    const totalCost = toNumber(d.total_cost);
+    const totalSell = toNumber(d.total_sell);
+    const margin = toNumber(d.margin);
+
+    return `
     <div class="delivery-card">
       <div class="delivery-date">${formatDate(d.date)}</div>
       <div class="delivery-totals">
-        <span>cost: ${d.total_cost.toFixed(2)}₾</span>
-        <span>sale: ${d.total_sell.toFixed(2)}₾</span>
+        <span>cost: ${totalCost.toFixed(2)}₾</span>
+        <span>sale: ${totalSell.toFixed(2)}₾</span>
       </div>
-      <div class="delivery-margin">margin: ${d.margin.toFixed(2)}₾</div>
+      <div class="delivery-margin">margin: ${margin.toFixed(2)}₾</div>
+      <div class="delivery-payment">
+        <span class="payment-status ${isPaymentPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatusLabel}</span>
+        ${canChangePayment ? `
+          <div class="payment-actions">
+            <button onclick="markDeliveryPaid(${d.id})" ${isPaymentPaid ? 'disabled' : ''}>mark as paid</button>
+            <button onclick="markDeliveryUnpaid(${d.id})" ${!isPaymentPaid ? 'disabled' : ''}>mark as unpaid</button>
+          </div>
+        ` : ''}
+      </div>
       ${currentRole === 'mom' ? `<button onclick="editDelivery(${d.id})">edit</button>` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   document.getElementById('deliveriesList').innerHTML = html || '<p>no deliveries</p>';
+}
+
+async function markDeliveryPaid(id) {
+  const result = await apiCall('markDeliveryPaid', { id }, 'POST');
+
+  if (result.success) {
+    await loadDeliveries();
+  } else {
+    alert('error: ' + (result.error || 'unknown'));
+  }
+}
+
+async function markDeliveryUnpaid(id) {
+  const result = await apiCall('markDeliveryUnpaid', { id }, 'POST');
+
+  if (result.success) {
+    await loadDeliveries();
+  } else {
+    alert('error: ' + (result.error || 'unknown'));
+  }
 }
 
 // Load admin products
@@ -191,7 +247,7 @@ async function createDelivery() {
     }
   });
   
-  const result = await apiCall('createDelivery', { date, items, created_by: currentUser }, 'POST');
+  const result = await apiCall('createDelivery', { date, items, created_by: currentUser, payment_status: 'unpaid' }, 'POST');
   
   if (result.success) {
     alert('delivery created');
