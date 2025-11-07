@@ -44,6 +44,9 @@
     .metric-value.sell { color: #10b981; }
     .metric-value.margin-positive { color: #2563eb; }
     .metric-value.margin-negative { color: #ef4444; }
+    .sell-positive { color: #10b981; }
+    .margin-positive { color: #2563eb; }
+    .margin-negative { color: #ef4444; }
     .delivery-actions-row { display: flex; justify-content: flex-end; }
     .delivery-actions { display: flex; gap: 10px; }
     .action-button { padding: 6px 16px; border-radius: 9999px; font-size: 13px; font-weight: 600; transition: opacity 0.2s ease, transform 0.2s ease; }
@@ -251,6 +254,68 @@
       return Number.isFinite(number) ? number : 0;
     };
 
+    const formatOneDecimal = value => ensureNumber(value).toFixed(1);
+
+    function normalizeDeliveryRecord(raw) {
+      if (!raw) return null;
+
+      const base = Array.isArray(raw)
+        ? {
+            id: raw[0],
+            date: raw[1],
+            status: raw[2],
+            payment_status: raw[3],
+            total_cost: raw[4],
+            total_sell: raw[5],
+            margin: raw[6],
+            created_by: raw[7],
+            created_at: raw[8],
+            updated_at: raw[9]
+          }
+        : { ...raw };
+
+      const totalCost = ensureNumber(base.total_cost);
+      const totalSell = ensureNumber(base.total_sell);
+
+      return {
+        ...base,
+        id: Number(base.id) || base.id,
+        payment_status: normalizePaymentStatus(base.payment_status),
+        total_cost: totalCost,
+        total_sell: totalSell,
+        margin: ensureNumber(totalSell - totalCost)
+      };
+    }
+
+    function normalizeProductRecord(raw) {
+      if (!raw) return null;
+
+      const base = Array.isArray(raw)
+        ? {
+            id: raw[0],
+            name: raw[1],
+            cost_price: raw[2],
+            sell_price: raw[3],
+            unit: raw[4],
+            category: raw[5],
+            active: raw[6]
+          }
+        : { ...raw };
+
+      const activeValue = base.active;
+      const isActive = activeValue === undefined
+        ? true
+        : String(activeValue).toLowerCase() === 'true';
+
+      return {
+        ...base,
+        id: Number(base.id) || base.id,
+        cost_price: ensureNumber(base.cost_price),
+        sell_price: ensureNumber(base.sell_price),
+        active: isActive
+      };
+    }
+
     function formatQuantity(value) {
       const number = Number(value) || 0;
       return Number.isInteger(number) ? number.toString() : number.toFixed(2);
@@ -357,19 +422,13 @@
         return;
       }
 
-      const deliveries = result.data.map(delivery => {
-        const totalCost = ensureNumber(delivery.total_cost);
-        const totalSell = ensureNumber(delivery.total_sell);
-
-        return {
+      const deliveries = result.data
+        .map(normalizeDeliveryRecord)
+        .filter(Boolean)
+        .map(delivery => ({
           ...delivery,
-          date: normalizeDeliveryDate(delivery.date),
-          payment_status: normalizePaymentStatus(delivery.payment_status),
-          total_cost: totalCost,
-          total_sell: totalSell,
-          margin: ensureNumber(totalSell - totalCost)
-        };
-      });
+          date: normalizeDeliveryDate(delivery.date)
+        }));
 
       allDeliveries = deliveries;
 
@@ -378,7 +437,9 @@
         const paymentStatus = normalizePaymentStatus(d.payment_status);
         const isPaid = paymentStatus === 'paid';
         const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
-        const marginValue = d.margin;
+        const totalCost = ensureNumber(d.total_cost);
+        const totalSell = ensureNumber(d.total_sell);
+        const marginValue = ensureNumber(d.margin);
         const displayMargin = Math.abs(marginValue) < 0.005 ? 0 : marginValue;
         const marginClass = marginValue < 0 ? 'metric-value margin-negative' : 'metric-value margin-positive';
 
@@ -396,11 +457,11 @@
           <div class="delivery-metrics">
             <div class="metric">
               <div class="metric-label">cost price</div>
-              <div class="metric-value">${formatCurrency(d.total_cost)}₾</div>
+              <div class="metric-value">${formatCurrency(totalCost)}₾</div>
             </div>
             <div class="metric">
               <div class="metric-label">sell price</div>
-              <div class="metric-value sell">${formatCurrency(d.total_sell)}₾</div>
+              <div class="metric-value sell">${formatCurrency(totalSell)}₾</div>
             </div>
             <div class="metric">
               <div class="metric-label">margin</div>
@@ -483,7 +544,7 @@
         return;
       }
       
-      const delivery = result.data;
+      const delivery = normalizeDeliveryRecord(result.data) || result.data;
 
       currentDelivery = {
         ...delivery,
@@ -537,6 +598,7 @@
       const paymentStatus = normalizePaymentStatus(currentDelivery.payment_status);
       const isPaid = paymentStatus === 'paid';
       const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
+      const marginClass = margin < 0 ? 'margin-negative' : 'margin-positive';
 
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
@@ -553,7 +615,7 @@
             ${currentRole !== 'manager' ? `
             <div>
               <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
-              <strong class="margin-positive">${formatCurrency(margin)}₾</strong>
+              <strong class="${marginClass}">${formatCurrency(margin)}₾</strong>
             </div>
             ` : ''}
           </div>
@@ -679,24 +741,26 @@
       document.getElementById('productsForm').innerHTML = '<div class="loading">loading products...</div>';
       
       const result = await apiCall('getProducts');
-      
+
       if (!result.success || !result.data) {
         document.getElementById('productsForm').innerHTML = '<p>error loading products</p>';
         return;
       }
-      
-      allProducts = result.data.filter(p => p.active);
-      
+
+      allProducts = result.data
+        .map(normalizeProductRecord)
+        .filter(p => p && p.active);
+
       const html = allProducts.map(p => `
         <div class="product-item" data-id="${p.id}">
           <div><strong>${p.name}</strong><br><small>${p.unit}</small></div>
           <div>
             <small>cost</small><br>
-            <span>${(p.cost_price || 0).toFixed(1)}₾</span>
+            <span>${formatOneDecimal(p.cost_price)}₾</span>
           </div>
           <div>
             <small>sell</small><br>
-            <span>${(p.sell_price || 0).toFixed(1)}₾</span>
+            <span>${formatOneDecimal(p.sell_price)}₾</span>
           </div>
           <input type="number" step="0.5" min="0" value="0" placeholder="qty" data-product="${p.id}">
         </div>
@@ -726,8 +790,8 @@
             items.push({
               product_id: productId,
               quantity: qty,
-              cost_price: product.cost_price || 0,
-              sell_price: product.sell_price || 0
+              cost_price: ensureNumber(product.cost_price),
+              sell_price: ensureNumber(product.sell_price)
             });
           }
         }
