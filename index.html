@@ -158,9 +158,14 @@
   </div>
 
   <script>
-    // CONFIG
+    // ============================================================================
+    // CONFIGURATION & STATE
+    // ============================================================================
+    
+    // Authentication credentials (change these in production)
     const AUTH = { executor: '1234', manager: '5678', admin: '9999' };
     
+    // Application state
     let currentUser = null;
     let currentRole = null;
     let allProducts = [];
@@ -170,57 +175,94 @@
     let hasChanges = false;
     let selectedRole = null;
 
+    // ============================================================================
+    // DATE FORMATTING (Asia/Tbilisi timezone)
+    // ============================================================================
+    
     const TBILISI_TIMEZONE = 'Asia/Tbilisi';
-    const tbilisiDateFormatter = new Intl.DateTimeFormat('en-CA', {
+
+    // Date formatter for date-only fields (yyyy-MM-dd)
+    const dateOnlyFormatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: TBILISI_TIMEZONE,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
     });
 
-    function parseTbilisiDate(value) {
-      if (value === null || value === undefined) return null;
+    // DateTime formatter for ISO timestamps (created_at, updated_at)
+    const dateTimeFormatter = new Intl.DateTimeFormat('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: TBILISI_TIMEZONE
+    });
 
-      if (value instanceof Date) {
-        return Number.isNaN(value.getTime()) ? null : value;
-      }
-
-      if (typeof value === 'number') {
-        const fromNumber = new Date(value);
-        return Number.isNaN(fromNumber.getTime()) ? null : fromNumber;
-      }
-
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        if (!trimmed) return null;
-
-        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-          return new Date(`${trimmed}T00:00:00+04:00`);
-        }
-
-        const numeric = Number(trimmed);
-        if (!Number.isNaN(numeric)) {
-          return parseTbilisiDate(numeric);
-        }
-
-        const parsed = new Date(trimmed);
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
-
-      return null;
-    }
-
-    function normalizeDeliveryDate(value) {
-      const parsed = parseTbilisiDate(value);
-      if (!parsed) return '';
-      return tbilisiDateFormatter.format(parsed);
-    }
-
+    /**
+     * Format a date value (handles yyyy-MM-dd strings or ISO timestamps)
+     * Returns formatted date string in yyyy-MM-dd format
+     */
     function formatDate(value) {
-      const normalized = normalizeDeliveryDate(value);
-      return normalized || 'No date';
+      if (!value) return 'No date';
+      
+      try {
+        // If already in yyyy-MM-dd format, parse and format to ensure consistency
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+          return value.trim();
+        }
+        
+        // Parse ISO string or any date format
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return 'Invalid date';
+        
+        return dateOnlyFormatter.format(date);
+      } catch (e) {
+        return 'Invalid date';
+      }
     }
 
+    /**
+     * Format ISO datetime string to localized date + time
+     * For created_at, updated_at fields that include time component
+     */
+    function formatDateTime(value) {
+      if (!value) return '';
+      
+      try {
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return '';
+        
+        return dateTimeFormatter.format(date);
+      } catch (e) {
+        return '';
+      }
+    }
+
+    /**
+     * Normalize date for form input (yyyy-MM-dd format)
+     */
+    function normalizeDeliveryDate(value) {
+      if (!value) return '';
+      
+      try {
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+          return value.trim();
+        }
+        
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return '';
+        
+        return dateOnlyFormatter.format(date);
+      } catch (e) {
+        return '';
+      }
+    }
+
+    // ============================================================================
+    // UTILITY FUNCTIONS
+    // ============================================================================
+    
+    /**
+     * Normalize payment status to 'paid' or 'unpaid'
+     */
     function normalizePaymentStatus(value) {
       if (value === null || value === undefined) {
         return 'unpaid';
@@ -230,52 +272,111 @@
       return normalized === 'paid' ? 'paid' : 'unpaid';
     }
 
+    /**
+     * Round number to 2 decimal places
+     */
     const round2 = value => Math.round((Number(value) || 0) * 100) / 100;
 
+    /**
+     * Safely convert value to number, returning 0 if invalid
+     */
     const ensureNumber = value => {
       const number = Number(value);
       return Number.isFinite(number) ? number : 0;
     };
 
+    /**
+     * Format quantity (integer or decimal)
+     */
     function formatQuantity(value) {
       const number = Number(value) || 0;
       return Number.isInteger(number) ? number.toString() : number.toFixed(2);
     }
 
+    /**
+     * Format currency value with GEL symbol
+     */
     function formatCurrency(value, digits = 2) {
       const number = Number(value) || 0;
       return number.toFixed(digits);
     }
 
-    // API CALL
-    async function apiCall(action, params = {}) {
+    /**
+     * Robust money formatter that handles strings with spaces/commas
+     * @param {*} v - Value to format (can be string or number)
+     * @returns {string} - Formatted string with ₾ symbol
+     */
+    function formatMoney(v) {
+      if (typeof v === 'string') {
+        v = Number(v.replace(/\s/g, '').replace(',', '.'));
+      }
+      v = Number(v);
+      return Number.isFinite(v) ? v.toFixed(2) + '₾' : '0.00₾';
+    }
+
+    // ============================================================================
+    // API LAYER
+    // ============================================================================
+    
+    // Centralized API base URL - change this to point to your backend
+    const API_BASE_URL = '/api/proxy';
+
+    /**
+     * Generic fetch wrapper with retry logic.
+     * Retries once on network failure before returning error.
+     * 
+     * @param {string} url - The URL to fetch
+     * @param {object} options - Fetch options (method, headers, body, etc.)
+     * @param {number} retries - Number of retries remaining (default: 1)
+     * @returns {Promise<object>} - JSON response or error object
+     */
+    async function apiFetch(url, options = {}, retries = 1) {
       try {
-        const url = new URL('/api/proxy', window.location.origin);
-        url.searchParams.append('action', action);
-        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-        
-        const response = await fetch(url.toString());
+        const response = await fetch(url, options);
         const result = await response.json();
         return result;
       } catch (error) {
         console.error('API Error:', error);
-        return { error: error.message };
+        
+        // Retry once on network failure
+        if (retries > 0) {
+          console.log(`Retrying API call (${retries} retries left)...`);
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
+          return apiFetch(url, options, retries - 1);
+        }
+        
+        return { success: false, error: error.message };
       }
     }
 
+    /**
+     * GET request with query parameters
+     * 
+     * @param {string} action - API action name
+     * @param {object} params - Query parameters
+     * @returns {Promise<object>} - API response
+     */
+    async function apiCall(action, params = {}) {
+      const url = new URL(API_BASE_URL, window.location.origin);
+      url.searchParams.append('action', action);
+      Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+      
+      return apiFetch(url.toString());
+    }
+
+    /**
+     * POST request with JSON body
+     * 
+     * @param {string} action - API action name
+     * @param {object} data - Request body data
+     * @returns {Promise<object>} - API response
+     */
     async function apiPost(action, data) {
-      try {
-        const response = await fetch('/api/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, data })
-        });
-        const result = await response.json();
-        return result;
-      } catch (error) {
-        console.error('API Error:', error);
-        return { error: error.message };
-      }
+      return apiFetch(API_BASE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, data })
+      });
     }
 
     // AUTH
@@ -347,14 +448,22 @@
         ...delivery,
         date: normalizeDeliveryDate(delivery.date),
         payment_status: normalizePaymentStatus(delivery.payment_status),
-        total_cost: ensureNumber(delivery.total_cost),
-        total_sell: ensureNumber(delivery.total_sell),
-        margin: ensureNumber(delivery.margin)
+        // Use total_cost from backend, fallback to cost_price (legacy), then 0
+        total_cost: Number(delivery.total_cost ?? delivery.cost_price ?? 0),
+        total_sell: Number(delivery.total_sell ?? delivery.sell_price ?? 0),
+        margin: Number(delivery.margin ?? 0)
       }));
 
       allDeliveries = deliveries;
 
-      const html = deliveries.slice().reverse().map(d => {
+      // Sort deliveries by created_at (or date) descending, not by ID
+      const sortedDeliveries = deliveries.slice().sort((a, b) => {
+        const dateA = a.created_at || a.date || '';
+        const dateB = b.created_at || b.date || '';
+        return dateB.localeCompare(dateA);
+      });
+
+      const html = sortedDeliveries.map(d => {
         const deliveryDate = formatDate(d.date);
         const paymentStatus = normalizePaymentStatus(d.payment_status);
         const isPaid = paymentStatus === 'paid';
@@ -363,26 +472,26 @@
         return `
         <div class="delivery-card">
           <div class="delivery-header">
-            <div class="delivery-date" onclick="viewDelivery(${d.id})">${deliveryDate}</div>
+            <div class="delivery-date" onclick="viewDelivery('${d.id}')">${deliveryDate}</div>
             ${currentRole === 'executor' ? `
               <div class="delivery-actions">
-                <button class="danger" onclick="event.stopPropagation(); deleteDelivery(${d.id})">delete</button>
+                <button class="danger" onclick="event.stopPropagation(); deleteDelivery('${d.id}')">delete</button>
               </div>
             ` : ''}
           </div>
           <div class="delivery-totals">
             <div>
               <span>cost price</span>
-              <span>${formatCurrency(d.total_cost)}₾</span>
+              <span>${formatMoney(d.total_cost)}</span>
             </div>
             <div>
               <span>sell price</span>
-              <span class="sell-positive">${formatCurrency(d.total_sell)}₾</span>
+              <span class="sell-positive">${formatMoney(d.total_sell)}</span>
             </div>
             ${currentRole !== 'manager' ? `
             <div>
               <span>margin</span>
-              <span class="margin-positive">${formatCurrency(d.margin)}₾</span>
+              <span class="margin-positive">${formatMoney(d.margin)}</span>
             </div>
             ` : ''}
           </div>
@@ -390,8 +499,8 @@
             <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
             ${showPaymentControls ? `
               <div class="payment-actions">
-                <button class="edit-btn" onclick="event.stopPropagation(); markDeliveryPaid(${d.id})" ${isPaid ? 'disabled' : ''}>mark as paid</button>
-                <button class="danger" onclick="event.stopPropagation(); markDeliveryUnpaid(${d.id})" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
+                <button class="edit-btn" onclick="event.stopPropagation(); markDeliveryPaid('${d.id}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
+                <button class="danger" onclick="event.stopPropagation(); markDeliveryUnpaid('${d.id}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
               </div>
             ` : ''}
           </div>
@@ -422,13 +531,13 @@
 
       if (result.success) {
         if (Array.isArray(allDeliveries)) {
-          const target = allDeliveries.find(d => Number(d.id) === Number(id));
+          const target = allDeliveries.find(d => String(d.id) === String(id));
           if (target) {
             target.payment_status = status;
           }
         }
 
-        if (currentDelivery && Number(currentDelivery.id) === Number(id)) {
+        if (currentDelivery && String(currentDelivery.id) === String(id)) {
           currentDelivery.payment_status = status;
           renderDeliverySummary();
         }
@@ -518,6 +627,11 @@
       const isPaid = paymentStatus === 'paid';
       const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
 
+      const createdAt = formatDateTime(currentDelivery.created_at);
+      const updatedAt = formatDateTime(currentDelivery.updated_at);
+      const createdBy = currentDelivery.created_by || '';
+      const updatedBy = currentDelivery.updated_by || '';
+
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
           <h3>Summary</h3>
@@ -537,12 +651,18 @@
             </div>
             ` : ''}
           </div>
+          ${createdAt ? `
+            <div style="margin-top: 15px; font-size: 13px; color: #7f8c8d;">
+              <div>Created: ${createdAt}${createdBy ? ` by ${createdBy}` : ''}</div>
+              ${updatedAt ? `<div style="margin-top: 4px;">Updated: ${updatedAt}${updatedBy ? ` by ${updatedBy}` : ''}</div>` : ''}
+            </div>
+          ` : ''}
           <div class="delivery-payment" style="margin-top: 20px;">
             <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
             ${showPaymentControls ? `
               <div class="payment-actions">
-                <button class="edit-btn" onclick="markDeliveryPaid(${currentDeliveryId})" ${isPaid ? 'disabled' : ''}>mark as paid</button>
-                <button class="danger" onclick="markDeliveryUnpaid(${currentDeliveryId})" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
+                <button class="edit-btn" onclick="markDeliveryPaid('${currentDeliveryId}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
+                <button class="danger" onclick="markDeliveryUnpaid('${currentDeliveryId}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
               </div>
             ` : ''}
           </div>
@@ -627,7 +747,7 @@
       }
 
       const items = currentDelivery.items.map(item => ({
-        id: parseInt(item.id, 10),
+        id: item.id,
         quantity: Number(item.quantity) || 0
       }));
 
@@ -700,8 +820,8 @@
       document.querySelectorAll('.product-item').forEach(row => {
         const qty = parseFloat(row.querySelector('input').value) || 0;
         if (qty > 0) {
-          const productId = parseInt(row.dataset.id);
-          const product = allProducts.find(p => p.id === productId);
+          const productId = row.dataset.id;
+          const product = allProducts.find(p => String(p.id) === String(productId));
           if (product) {
             items.push({
               product_id: productId,
@@ -749,10 +869,10 @@
           <div class="product-name">${p.name} (${p.unit})</div>
           <div class="product-prices">
             <input type="number" step="0.1" value="${p.cost_price || 0}" 
-                   onchange="updateProductPrice(${p.id}, 'cost_price', this.value)"
+                   onchange="updateProductPrice('${p.id}', 'cost_price', this.value)"
                    placeholder="cost">
             <input type="number" step="0.1" value="${p.sell_price || 0}"
-                   onchange="updateProductPrice(${p.id}, 'sell_price', this.value)"
+                   onchange="updateProductPrice('${p.id}', 'sell_price', this.value)"
                    placeholder="sell">
           </div>
         </div>
@@ -766,7 +886,7 @@
       const result = await apiCall('getProducts');
       if (!result.success) return;
       
-      const product = result.data.find(p => p.id === id);
+      const product = result.data.find(p => String(p.id) === String(id));
       if (!product) return;
       
       product[field] = parseFloat(value) || 0;
@@ -785,12 +905,15 @@
         return;
       }
       
-      const html = result.data.reverse().slice(0, 50).map(log => `
-        <div style="background: white; padding: 12px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;">
-          <strong>${log.timestamp}</strong> | ${log.user} | ${log.action} | ${log.entity} #${log.entity_id}
-          <br><small style="color: #7f8c8d;">${log.details}</small>
-        </div>
-      `).join('');
+      const html = result.data.reverse().slice(0, 50).map(log => {
+        const timestamp = formatDateTime(log.timestamp) || log.timestamp;
+        return `
+          <div style="background: white; padding: 12px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;">
+            <strong>${timestamp}</strong> | ${log.user} | ${log.action} | ${log.entity} #${log.entity_id}
+            <br><small style="color: #7f8c8d;">${log.details}</small>
+          </div>
+        `;
+      }).join('');
       
       document.getElementById('auditLogList').innerHTML = html;
     }
