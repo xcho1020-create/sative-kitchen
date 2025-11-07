@@ -171,54 +171,80 @@
     let selectedRole = null;
 
     const TBILISI_TIMEZONE = 'Asia/Tbilisi';
-    const tbilisiDateFormatter = new Intl.DateTimeFormat('en-CA', {
+
+    // Date formatter for date-only fields (yyyy-MM-dd)
+    const dateOnlyFormatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: TBILISI_TIMEZONE,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
     });
 
-    function parseTbilisiDate(value) {
-      if (value === null || value === undefined) return null;
+    // DateTime formatter for ISO timestamps (created_at, updated_at)
+    const dateTimeFormatter = new Intl.DateTimeFormat('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: TBILISI_TIMEZONE
+    });
 
-      if (value instanceof Date) {
-        return Number.isNaN(value.getTime()) ? null : value;
-      }
-
-      if (typeof value === 'number') {
-        const fromNumber = new Date(value);
-        return Number.isNaN(fromNumber.getTime()) ? null : fromNumber;
-      }
-
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        if (!trimmed) return null;
-
-        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-          return new Date(`${trimmed}T00:00:00+04:00`);
-        }
-
-        const numeric = Number(trimmed);
-        if (!Number.isNaN(numeric)) {
-          return parseTbilisiDate(numeric);
-        }
-
-        const parsed = new Date(trimmed);
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
-
-      return null;
-    }
-
-    function normalizeDeliveryDate(value) {
-      const parsed = parseTbilisiDate(value);
-      if (!parsed) return '';
-      return tbilisiDateFormatter.format(parsed);
-    }
-
+    /**
+     * Format a date value (handles yyyy-MM-dd strings or ISO timestamps)
+     * Returns formatted date string in yyyy-MM-dd format
+     */
     function formatDate(value) {
-      const normalized = normalizeDeliveryDate(value);
-      return normalized || 'No date';
+      if (!value) return 'No date';
+      
+      try {
+        // If already in yyyy-MM-dd format, parse and format to ensure consistency
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+          return value.trim();
+        }
+        
+        // Parse ISO string or any date format
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return 'Invalid date';
+        
+        return dateOnlyFormatter.format(date);
+      } catch (e) {
+        return 'Invalid date';
+      }
+    }
+
+    /**
+     * Format ISO datetime string to localized date + time
+     * For created_at, updated_at fields that include time component
+     */
+    function formatDateTime(value) {
+      if (!value) return '';
+      
+      try {
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return '';
+        
+        return dateTimeFormatter.format(date);
+      } catch (e) {
+        return '';
+      }
+    }
+
+    /**
+     * Normalize date for form input (yyyy-MM-dd format)
+     */
+    function normalizeDeliveryDate(value) {
+      if (!value) return '';
+      
+      try {
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+          return value.trim();
+        }
+        
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return '';
+        
+        return dateOnlyFormatter.format(date);
+      } catch (e) {
+        return '';
+      }
     }
 
     function normalizePaymentStatus(value) {
@@ -525,6 +551,11 @@
       const isPaid = paymentStatus === 'paid';
       const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
 
+      const createdAt = formatDateTime(currentDelivery.created_at);
+      const updatedAt = formatDateTime(currentDelivery.updated_at);
+      const createdBy = currentDelivery.created_by || '';
+      const updatedBy = currentDelivery.updated_by || '';
+
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
           <h3>Summary</h3>
@@ -544,6 +575,12 @@
             </div>
             ` : ''}
           </div>
+          ${createdAt ? `
+            <div style="margin-top: 15px; font-size: 13px; color: #7f8c8d;">
+              <div>Created: ${createdAt}${createdBy ? ` by ${createdBy}` : ''}</div>
+              ${updatedAt ? `<div style="margin-top: 4px;">Updated: ${updatedAt}${updatedBy ? ` by ${updatedBy}` : ''}</div>` : ''}
+            </div>
+          ` : ''}
           <div class="delivery-payment" style="margin-top: 20px;">
             <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
             ${showPaymentControls ? `
@@ -792,12 +829,15 @@
         return;
       }
       
-      const html = result.data.reverse().slice(0, 50).map(log => `
-        <div style="background: white; padding: 12px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;">
-          <strong>${log.timestamp}</strong> | ${log.user} | ${log.action} | ${log.entity} #${log.entity_id}
-          <br><small style="color: #7f8c8d;">${log.details}</small>
-        </div>
-      `).join('');
+      const html = result.data.reverse().slice(0, 50).map(log => {
+        const timestamp = formatDateTime(log.timestamp) || log.timestamp;
+        return `
+          <div style="background: white; padding: 12px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;">
+            <strong>${timestamp}</strong> | ${log.user} | ${log.action} | ${log.entity} #${log.entity_id}
+            <br><small style="color: #7f8c8d;">${log.details}</small>
+          </div>
+        `;
+      }).join('');
       
       document.getElementById('auditLogList').innerHTML = html;
     }
