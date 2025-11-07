@@ -301,6 +301,19 @@
       return number.toFixed(digits);
     }
 
+    /**
+     * Robust money formatter that handles strings with spaces/commas
+     * @param {*} v - Value to format (can be string or number)
+     * @returns {string} - Formatted string with ₾ symbol
+     */
+    function formatMoney(v) {
+      if (typeof v === 'string') {
+        v = Number(v.replace(/\s/g, '').replace(',', '.'));
+      }
+      v = Number(v);
+      return Number.isFinite(v) ? v.toFixed(2) + '₾' : '0.00₾';
+    }
+
     // ============================================================================
     // API LAYER
     // ============================================================================
@@ -435,9 +448,10 @@
         ...delivery,
         date: normalizeDeliveryDate(delivery.date),
         payment_status: normalizePaymentStatus(delivery.payment_status),
-        total_cost: ensureNumber(delivery.total_cost),
-        total_sell: ensureNumber(delivery.total_sell),
-        margin: ensureNumber(delivery.margin)
+        // Use total_cost from backend, fallback to cost_price (legacy), then 0
+        total_cost: Number(delivery.total_cost ?? delivery.cost_price ?? 0),
+        total_sell: Number(delivery.total_sell ?? delivery.sell_price ?? 0),
+        margin: Number(delivery.margin ?? 0)
       }));
 
       allDeliveries = deliveries;
@@ -468,16 +482,16 @@
           <div class="delivery-totals">
             <div>
               <span>cost price</span>
-              <span>${formatCurrency(d.total_cost)}₾</span>
+              <span>${formatMoney(d.total_cost)}</span>
             </div>
             <div>
               <span>sell price</span>
-              <span class="sell-positive">${formatCurrency(d.total_sell)}₾</span>
+              <span class="sell-positive">${formatMoney(d.total_sell)}</span>
             </div>
             ${currentRole !== 'manager' ? `
             <div>
               <span>margin</span>
-              <span class="margin-positive">${formatCurrency(d.margin)}₾</span>
+              <span class="margin-positive">${formatMoney(d.margin)}</span>
             </div>
             ` : ''}
           </div>
