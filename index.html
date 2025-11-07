@@ -2,19 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sative Kitchen</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #2c3e50; }
-    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    :root {
+      --container-max: 1080px;
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 16px;
+      --space-4: 20px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8f9fa;
+      color: #2c3e50;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: clamp(12px, 2vw, 24px);
+    }
     header { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
-    header .container { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; }
-    .logo { font-size: 24px; font-weight: 700; color: #2c3e50; }
-    .user-info { display: flex; align-items: center; gap: 15px; font-size: 14px; }
+    header .container { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); padding: clamp(12px, 2vw, 20px); flex-wrap: wrap; }
+    .logo { font-size: clamp(18px, 2.4vw, 24px); font-weight: 700; color: #2c3e50; text-transform: lowercase; }
+    .user-info { display: flex; align-items: center; gap: var(--space-2); font-size: 14px; flex-wrap: wrap; }
     .role-badge { background: #e8f4f8; color: #1a7f8f; padding: 6px 12px; border-radius: 20px; font-weight: 600; }
     button { background: #2c3e50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; }
     button:hover { background: #1a252f; }
+    button:focus-visible { outline: 2px solid #1a7f8f; outline-offset: 2px; }
     button.secondary { background: #95a5a6; }
     button.secondary:hover { background: #7f8c8d; }
     button.primary { background: #1a7f8f; }
@@ -27,140 +45,92 @@
     .login-container { max-width: 400px; margin: 60px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .login-container h1 { font-size: 28px; margin-bottom: 10px; text-align: center; }
     .login-container p { text-align: center; margin-bottom: 30px; color: #7f8c8d; font-size: 14px; }
-    /* New Delivery Card Layout */
-    .delivery-card-new {
-      background: white;
-      padding: 20px;
+    .deliveries-list { display: grid; gap: var(--space-2); }
+    .delivery-card {
+      background: #fff;
       border-radius: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      transition: box-shadow 0.2s ease;
+      padding: clamp(12px, 2vw, 20px);
+      box-shadow: 0 1px 2px rgba(0,0,0,.06);
+      display: grid;
+      gap: var(--space-2);
     }
-    .delivery-card-new:hover {
-      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-    }
-    .card-main {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      flex: 1;
-    }
-    .card-info {
-      min-width: 180px;
-    }
-    .delivery-date-new {
+    .delivery-card__row { display: grid; gap: var(--space-2); }
+    .delivery-card__header { align-content: start; }
+    .delivery-date {
       font-weight: 700;
-      font-size: 18px;
+      font-size: clamp(18px, 2.4vw, 22px);
+      text-decoration: none;
       color: #2c3e50;
       cursor: pointer;
-      display: block;
-      margin-bottom: 6px;
-      text-decoration: none;
     }
-    .delivery-date-new:hover {
-      color: #1a7f8f;
-      text-decoration: underline;
-    }
-    .payment-status-new {
-      font-size: 14px;
+    .delivery-date:hover,
+    .delivery-date:focus-visible { color: #1a7f8f; text-decoration: underline; }
+    .payment-line {
+      color: #2e7d32;
       font-weight: 600;
+      font-size: clamp(13px, 1.8vw, 14px);
       text-transform: capitalize;
     }
-    .payment-status-new.paid {
-      color: #2e7d32;
-    }
-    .payment-status-new.unpaid {
-      color: #d32f2f;
-    }
-    .card-sell {
+    .payment-line.unpaid { color: #d32f2f; }
+    .delivery-card__totals .kpi { text-align: left; }
+    .kpi .label { display: block; font-size: clamp(11px, 1.6vw, 12px); color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.4px; }
+    .kpi .val { display: block; font-weight: 700; font-size: clamp(16px, 2vw, 18px); color: #27ae60; }
+    .delivery-card__actions {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      min-width: 140px;
-    }
-    .label-new {
-      font-size: 12px;
-      color: #7f8c8d;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .value-new {
-      font-size: 20px;
-      font-weight: 700;
-      color: #27ae60;
-    }
-    .card-actions {
-      display: flex;
-      gap: 8px;
       flex-wrap: wrap;
-      align-items: center;
+      gap: var(--space-2);
+      width: 100%;
     }
-    .btn-paid, .btn-unpaid, .btn-delete {
-      padding: 8px 16px;
-      font-size: 13px;
+    .delivery-card__actions .btn {
+      flex: 1 1 calc(50% - var(--space-2));
+      min-height: 44px;
+      border-radius: 8px;
+      font-size: 14px;
       font-weight: 600;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
       white-space: nowrap;
     }
-    .btn-paid {
-      background: #1a7f8f;
-      color: white;
+    .btn { padding: 10px 16px; border: none; cursor: pointer; transition: 0.2s ease; }
+    .btn:focus-visible { outline: 2px solid #1a7f8f; outline-offset: 2px; }
+    .btn-paid { background: #1a7f8f; color: #fff; }
+    .btn-paid:hover:not(:disabled) { background: #156873; }
+    .btn-paid:disabled { background: #95a5a6; cursor: not-allowed; opacity: 0.6; }
+    .btn-unpaid { background: #e67e22; color: #fff; }
+    .btn-unpaid:hover:not(:disabled) { background: #d35400; }
+    .btn-unpaid:disabled { background: #95a5a6; cursor: not-allowed; opacity: 0.6; }
+    .btn-delete { background: #e74c3c; color: #fff; }
+    .btn-delete:hover { background: #c0392b; }
+    .delivery-card__totals { display: grid; gap: var(--space-1); }
+
+    /* tablet ≥ 640px */
+    @media (min-width: 640px) {
+      .deliveries-list { gap: var(--space-3); }
+      .delivery-card {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: var(--space-3);
+      }
+      .delivery-card__actions {
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: var(--space-3);
+      }
+      .delivery-card__actions .btn {
+        flex: 0 0 auto;
+        min-width: 120px;
+      }
     }
-    .btn-paid:hover:not(:disabled) {
-      background: #156873;
+
+    /* desktop ≥ 960px */
+    @media (min-width: 960px) {
+      .delivery-card {
+        grid-template-columns: 1fr auto;
+        align-items: start;
+      }
+      .delivery-card.has-actions {
+        grid-template-columns: 1fr auto auto;
+      }
+      .delivery-card__totals { text-align: right; }
     }
-    .btn-paid:disabled {
-      background: #95a5a6;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    .btn-unpaid {
-      background: #e67e22;
-      color: white;
-    }
-    .btn-unpaid:hover:not(:disabled) {
-      background: #d35400;
-    }
-    .btn-unpaid:disabled {
-      background: #95a5a6;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    .btn-delete {
-      background: #e74c3c;
-      color: white;
-    }
-    .btn-delete:hover {
-      background: #c0392b;
-    }
-    
-    /* Old delivery card styles (kept for backward compatibility if needed) */
-    .delivery-card { background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .delivery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .delivery-date { font-weight: 600; font-size: 16px; cursor: pointer; color: #1a7f8f; }
-    .delivery-date:hover { text-decoration: underline; }
-    .delivery-actions { display: flex; gap: 8px; }
-    .delivery-payment { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 12px; flex-wrap: wrap; }
-    .payment-status { font-weight: 600; text-transform: capitalize; }
-    .payment-status.paid { color: #27ae60; }
-    .payment-status.unpaid { color: #e74c3c; }
-    .payment-actions { display: flex; gap: 8px; }
-    .payment-actions button { padding: 6px 12px; font-size: 13px; }
-    .delivery-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; font-size: 14px; }
-    .delivery-totals div { display: flex; flex-direction: column; }
-    .delivery-totals span:first-child { color: #7f8c8d; font-size: 12px; margin-bottom: 2px; }
-    .delivery-totals span:last-child { font-weight: 600; }
-    .margin-positive { color: #27ae60; }
-    .sell-positive { color: #27ae60; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; font-weight: 600; margin-bottom: 5px; }
     .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
@@ -172,13 +142,44 @@
     .admin-products .product-prices { display: flex; gap: 10px; }
     .admin-products .product-prices input { width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
     .loading { text-align: center; padding: 40px; color: #7f8c8d; }
-    .detail-summary { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .detail-summary h3 { margin-bottom: 15px; font-size: 18px; }
-    .product-detail-item { background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .product-detail-item h4 { margin-bottom: 8px; font-size: 16px; }
-    .product-detail-item .info { display: flex; gap: 20px; margin-bottom: 10px; color: #7f8c8d; font-size: 14px; }
-    .product-detail-item input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100px; }
-    .product-detail-item .info + .info { margin-top: 8px; }
+    .detail-summary { background: white; padding: clamp(16px, 2vw, 24px); border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: grid; gap: var(--space-3); }
+    .detail-summary h3 { margin-bottom: 4px; font-size: clamp(18px, 2.4vw, 24px); font-weight: 700; text-transform: lowercase; }
+    .summary-kpis {
+      display: grid;
+      gap: var(--space-3);
+      grid-template-columns: 1fr;
+    }
+    .summary-kpis .kpi { padding: var(--space-2); background: #f7f9fb; border-radius: 10px; }
+    .summary-kpis .kpi .val { color: #2c3e50; }
+    @media (min-width: 640px) {
+      .summary-kpis { grid-template-columns: repeat(var(--kpi-columns, 3), minmax(0, 1fr)); }
+    }
+    .delivery-payment { display: flex; flex-direction: column; gap: var(--space-2); }
+    .delivery-payment__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .delivery-payment__actions button { min-height: 44px; }
+    @media (min-width: 640px) {
+      .delivery-payment { flex-direction: row; justify-content: space-between; align-items: center; }
+      .delivery-payment__actions { justify-content: flex-end; }
+    }
+    .payment-status { font-weight: 600; text-transform: capitalize; }
+    .payment-status.paid { color: #2e7d32; }
+    .payment-status.unpaid { color: #d32f2f; }
+    .product-detail-item { background: white; padding: clamp(12px, 2vw, 18px); border-radius: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .product-detail-item h4 { font-size: clamp(16px, 2.2vw, 18px); margin-bottom: var(--space-1); }
+    .product-row { display: grid; gap: var(--space-2); grid-template-columns: 1fr; }
+    .product-row__meta { display: flex; flex-wrap: wrap; gap: var(--space-1); color: #7f8c8d; font-size: 13px; }
+    .product-row__label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: #7f8c8d; }
+    .product-row__quantity { display: flex; flex-direction: column; gap: var(--space-1); font-size: 13px; color: #7f8c8d; }
+    .product-row__quantity input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 100%; min-height: 40px; }
+    .product-row__totals { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #7f8c8d; }
+    .product-row__totals strong { font-size: clamp(15px, 2vw, 17px); color: #2c3e50; }
+    @media (min-width: 720px) {
+      .product-row[data-columns="4"] { grid-template-columns: 2fr 1fr 1fr 1fr; }
+      .product-row[data-columns="3"] { grid-template-columns: 2fr 1fr 1fr; }
+      .product-row[data-columns="2"] { grid-template-columns: 2fr 1fr; }
+      .product-row__quantity { align-items: flex-start; }
+      .product-row__totals { align-items: flex-start; }
+    }
     .info-note { background: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
   </style>
 </head>
@@ -570,11 +571,16 @@
 
     // LOAD DELIVERIES
     async function loadDeliveries() {
-      document.getElementById('deliveriesList').innerHTML = '<div class="loading">loading...</div>';
+      const listEl = document.getElementById('deliveriesList');
+      if (!listEl) return;
+
+      listEl.className = 'loading';
+      listEl.innerHTML = '<div class="loading">loading...</div>';
       const result = await apiCall('getDeliveries');
       
       if (!result.success || !result.data || result.data.length === 0) {
-        document.getElementById('deliveriesList').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">no deliveries yet</p>';
+        listEl.className = '';
+        listEl.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">no deliveries yet</p>';
         return;
       }
 
@@ -640,37 +646,39 @@
         const role = getCurrentRole();
         const showPaymentControls = role === 'executor' || role === 'manager';
         const canDelete = role === 'executor';
-        
+        const hasActions = showPaymentControls || canDelete;
+
         const sellPrice = round2(d.total_sell || 0);
 
         return `
-        <div class="delivery-card-new">
-          <div class="card-main">
-            <div class="card-info">
-              <a class="delivery-date-new" onclick="viewDelivery('${d.id}')">${deliveryDate}</a>
-              <div class="payment-status-new ${isPaid ? 'paid' : 'unpaid'}">
-                Payment: ${isPaid ? 'Paid' : 'Unpaid'}
-              </div>
-            </div>
-            <div class="card-sell">
-              <span class="label-new">sell price</span>
-              <span class="value-new">${formatMoney(sellPrice)}</span>
+        <article class="delivery-card${hasActions ? ' has-actions' : ''}">
+          <div class="delivery-card__row delivery-card__header">
+            <a class="delivery-date" onclick="viewDelivery('${d.id}')">${deliveryDate}</a>
+            <div class="payment-line${isPaid ? '' : ' unpaid'}">Payment: ${isPaid ? 'Paid' : 'Unpaid'}</div>
+          </div>
+          <div class="delivery-card__totals">
+            <div class="kpi">
+              <span class="label">SELL PRICE</span>
+              <span class="val">${formatMoney(sellPrice)}</span>
             </div>
           </div>
-          <div class="card-actions">
-            ${showPaymentControls ? `
-              <button class="btn-paid" onclick="event.stopPropagation(); markDeliveryPaid('${d.id}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
-              <button class="btn-unpaid" onclick="event.stopPropagation(); markDeliveryUnpaid('${d.id}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
-            ` : ''}
-            ${canDelete ? `
-              <button class="btn-delete" onclick="event.stopPropagation(); deleteDelivery('${d.id}')">delete</button>
-            ` : ''}
-          </div>
-        </div>
+          ${hasActions ? `
+            <div class="delivery-card__actions">
+              ${showPaymentControls ? `
+                <button class="btn btn-paid" onclick="event.stopPropagation(); markDeliveryPaid('${d.id}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
+                <button class="btn btn-unpaid" onclick="event.stopPropagation(); markDeliveryUnpaid('${d.id}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
+              ` : ''}
+              ${canDelete ? `
+                <button class="btn btn-delete" onclick="event.stopPropagation(); deleteDelivery('${d.id}')">delete</button>
+              ` : ''}
+            </div>
+          ` : ''}
+        </article>
       `;
       }).join('');
-      
-      document.getElementById('deliveriesList').innerHTML = html;
+
+      listEl.className = 'deliveries-list';
+      listEl.innerHTML = html;
     }
 
     // DELETE DELIVERY
@@ -797,49 +805,54 @@
       const createdBy = currentDelivery.created_by || '';
       const updatedBy = currentDelivery.updated_by || '';
       
-      // Build columns array based on visibility
-      const columns = [];
-      if (showCost) columns.push('cost');
-      columns.push('sell');
-      if (showMargin) columns.push('margin');
+      const kpis = [];
+      if (showCost) {
+        kpis.push(`
+          <div class="kpi">
+            <span class="label">COST PRICE</span>
+            <span class="val">${formatCurrency(totals.totalCost)}₾</span>
+          </div>
+        `);
+      }
+      kpis.push(`
+        <div class="kpi">
+          <span class="label">SELL PRICE</span>
+          <span class="val">${formatCurrency(totals.totalSell)}₾</span>
+        </div>
+      `);
+      if (showMargin) {
+        kpis.push(`
+          <div class="kpi">
+            <span class="label">MARGIN</span>
+            <span class="val">${formatCurrency(margin)}₾</span>
+          </div>
+        `);
+      }
+
+      const kpiCount = Math.max(1, kpis.length);
 
       document.getElementById('deliveryDetailSummary').innerHTML = `
-        <div class="detail-summary">
-          <h3>Summary</h3>
-          <div style="display: grid; grid-template-columns: repeat(${columns.length}, 1fr); gap: 15px;">
-            ${showCost ? `
-            <div>
-              <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>
-              <strong>${formatCurrency(totals.totalCost)}₾</strong>
-            </div>
-            ` : ''}
-            <div>
-              <span style="color: #7f8c8d; font-size: 12px;">sell price</span><br>
-              <strong class="sell-positive">${formatCurrency(totals.totalSell)}₾</strong>
-            </div>
-            ${showMargin ? `
-            <div>
-              <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
-              <strong class="margin-positive">${formatCurrency(margin)}₾</strong>
-            </div>
-            ` : ''}
+        <section class="detail-summary">
+          <h3>summary</h3>
+          <div class="summary-kpis" style="--kpi-columns: ${kpiCount};">
+            ${kpis.join('')}
           </div>
           ${createdAt ? `
-            <div style="margin-top: 15px; font-size: 13px; color: #7f8c8d;">
+            <div style="font-size: 13px; color: #7f8c8d;">
               <div>Created: ${createdAt}${createdBy ? ` by ${createdBy}` : ''}</div>
               ${updatedAt ? `<div style="margin-top: 4px;">Updated: ${updatedAt}${updatedBy ? ` by ${updatedBy}` : ''}</div>` : ''}
             </div>
           ` : ''}
-          <div class="delivery-payment" style="margin-top: 20px;">
+          <div class="delivery-payment">
             <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
             ${showPaymentControls ? `
-              <div class="payment-actions">
+              <div class="delivery-payment__actions">
                 <button class="edit-btn" onclick="markDeliveryPaid('${currentDeliveryId}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
                 <button class="danger" onclick="markDeliveryUnpaid('${currentDeliveryId}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
               </div>
             ` : ''}
           </div>
-        </div>
+        </section>
       `;
     }
 
@@ -855,25 +868,37 @@
         const totalCost = round2(quantity * costPrice);
         const totalSell = round2(quantity * sellPrice);
 
+        const columnCount = showCost ? 4 : 3;
+
         return `
           <div class="product-detail-item" data-index="${index}">
-            <h4>${item.product_name}</h4>
-            <div class="info">
-              <span>${item.unit}</span>
-              ${showCost ? `<span>cost: ${formatCurrency(costPrice, 1)}₾</span>` : ''}
-              <span>sell: ${formatCurrency(sellPrice, 1)}₾</span>
-            </div>
-            <div class="info">
-              ${canEdit ? `
-                <label style="font-size: 13px; display: flex; flex-direction: column; gap: 4px;">
-                  quantity:
+            <div class="product-row" data-columns="${columnCount}">
+              <div>
+                <h4>${item.product_name}</h4>
+                <div class="product-row__meta">
+                  <span>${item.unit}</span>
+                  ${showCost ? `<span>cost/unit: ${formatCurrency(costPrice, 1)}₾</span>` : ''}
+                  <span>sell/unit: ${formatCurrency(sellPrice, 1)}₾</span>
+                </div>
+              </div>
+              <div class="product-row__quantity">
+                <span class="product-row__label">Quantity</span>
+                ${canEdit ? `
                   <input type="number" step="0.5" min="0" value="${quantity}" data-index="${index}" oninput="updateDeliveryQuantity(${index}, this.value)" onchange="updateDeliveryQuantity(${index}, this.value)">
-                </label>
-              ` : `
-                <span data-quantity-display="${index}">quantity: ${formatQuantity(quantity)}</span>
-              `}
-              ${showCost ? `<span>Total cost: <strong data-total-cost="${index}">${formatCurrency(totalCost)}</strong>₾</span>` : ''}
-              <span>Total sell: <strong data-total-sell="${index}">${formatCurrency(totalSell)}</strong>₾</span>
+                ` : `
+                  <strong data-quantity-display="${index}">${formatQuantity(quantity)}</strong>
+                `}
+              </div>
+              ${showCost ? `
+                <div class="product-row__totals">
+                  <span class="product-row__label">Total cost</span>
+                  <strong data-total-cost="${index}">${formatCurrency(totalCost)}₾</strong>
+                </div>
+              ` : ''}
+              <div class="product-row__totals">
+                <span class="product-row__label">Total sell</span>
+                <strong data-total-sell="${index}">${formatCurrency(totalSell)}₾</strong>
+              </div>
             </div>
           </div>
         `;
