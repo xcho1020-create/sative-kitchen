@@ -468,6 +468,11 @@
         const paymentStatus = normalizePaymentStatus(d.payment_status);
         const isPaid = paymentStatus === 'paid';
         const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
+        
+        // Ensure we use the correct cost field with fallback
+        const costPrice = Number(d.total_cost ?? d.cost_price ?? 0);
+        const sellPrice = Number(d.total_sell ?? d.sell_price ?? 0);
+        const marginPrice = Number(d.margin ?? 0);
 
         return `
         <div class="delivery-card">
@@ -482,16 +487,16 @@
           <div class="delivery-totals">
             <div>
               <span>cost price</span>
-              <span>${formatMoney(d.total_cost)}</span>
+              <span>${formatMoney(costPrice)}</span>
             </div>
             <div>
               <span>sell price</span>
-              <span class="sell-positive">${formatMoney(d.total_sell)}</span>
+              <span class="sell-positive">${formatMoney(sellPrice)}</span>
             </div>
             ${currentRole !== 'manager' ? `
             <div>
               <span>margin</span>
-              <span class="margin-positive">${formatMoney(d.margin)}</span>
+              <span class="margin-positive">${formatMoney(marginPrice)}</span>
             </div>
             ` : ''}
           </div>
