@@ -232,6 +232,11 @@
 
     const round2 = value => Math.round((Number(value) || 0) * 100) / 100;
 
+    const ensureNumber = value => {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : 0;
+    };
+
     function formatQuantity(value) {
       const number = Number(value) || 0;
       return Number.isInteger(number) ? number.toString() : number.toFixed(2);
@@ -341,7 +346,10 @@
       const deliveries = result.data.map(delivery => ({
         ...delivery,
         date: normalizeDeliveryDate(delivery.date),
-        payment_status: normalizePaymentStatus(delivery.payment_status)
+        payment_status: normalizePaymentStatus(delivery.payment_status),
+        total_cost: ensureNumber(delivery.total_cost),
+        total_sell: ensureNumber(delivery.total_sell),
+        margin: ensureNumber(delivery.margin)
       }));
 
       allDeliveries = deliveries;
@@ -365,16 +373,16 @@
           <div class="delivery-totals">
             <div>
               <span>cost price</span>
-              <span>${(d.total_cost || 0).toFixed(2)}₾</span>
+              <span>${formatCurrency(d.total_cost)}₾</span>
             </div>
             <div>
               <span>sell price</span>
-              <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>
+              <span class="sell-positive">${formatCurrency(d.total_sell)}₾</span>
             </div>
             ${currentRole !== 'manager' ? `
             <div>
               <span>margin</span>
-              <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>
+              <span class="margin-positive">${formatCurrency(d.margin)}₾</span>
             </div>
             ` : ''}
           </div>

@@ -72,6 +72,11 @@ function formatDate(value) {
   return normalized || 'No date';
 }
 
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function normalizePaymentStatus(value) {
   if (value === null || value === undefined) {
     return 'unpaid';
@@ -138,22 +143,28 @@ async function loadDeliveries() {
   const deliveries = (result.data || []).map(delivery => ({
     ...delivery,
     date: normalizeDeliveryDate(delivery.date),
-    payment_status: normalizePaymentStatus(delivery.payment_status)
+    payment_status: normalizePaymentStatus(delivery.payment_status),
+    total_cost: toNumber(delivery.total_cost),
+    total_sell: toNumber(delivery.total_sell),
+    margin: toNumber(delivery.margin)
   }));
 
   const html = deliveries.map(d => {
     const isPaymentPaid = d.payment_status === 'paid';
     const paymentStatusLabel = isPaymentPaid ? 'paid' : 'unpaid';
     const canChangePayment = ['executor', 'manager', 'mom'].includes(currentRole);
+    const totalCost = toNumber(d.total_cost);
+    const totalSell = toNumber(d.total_sell);
+    const margin = toNumber(d.margin);
 
     return `
     <div class="delivery-card">
       <div class="delivery-date">${formatDate(d.date)}</div>
       <div class="delivery-totals">
-        <span>cost: ${d.total_cost.toFixed(2)}₾</span>
-        <span>sale: ${d.total_sell.toFixed(2)}₾</span>
+        <span>cost: ${totalCost.toFixed(2)}₾</span>
+        <span>sale: ${totalSell.toFixed(2)}₾</span>
       </div>
-      <div class="delivery-margin">margin: ${d.margin.toFixed(2)}₾</div>
+      <div class="delivery-margin">margin: ${margin.toFixed(2)}₾</div>
       <div class="delivery-payment">
         <span class="payment-status ${isPaymentPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatusLabel}</span>
         ${canChangePayment ? `
