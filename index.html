@@ -529,7 +529,7 @@
     // LOAD PRODUCTS FOR FORM
     async function showNewDelivery() {
       showPage('new-delivery');
-      const dateInput = document.getElementById('deliveryDate');
+      const dateInput = document.getElementById('deliveryDate'); const selectedDate = new Date(dateInput.value + 'T00:00:00+04:00'); // так дата всегда будет тбилисская
       if (dateInput) dateInput.value = ymd(nowTbs());
       document.getElementById('productsForm').innerHTML = '<div class="loading">loading products...</div>';
       
@@ -684,7 +684,7 @@
       
       // Tbilisi timezone UTC+4
       const today = ymd(nowTbs());
-      const dateInput = document.getElementById('deliveryDate');
+      const dateInput = document.getElementById('deliveryDate'); const selectedDate = new Date(dateInput.value + 'T00:00:00+04:00'); // так дата всегда будет тбилисская
       if (dateInput) dateInput.value = today;
       
       // Admin page load handlers
