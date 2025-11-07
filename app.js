@@ -72,6 +72,20 @@ function formatDate(value) {
   return normalized || 'No date';
 }
 
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizePaymentStatus(value) {
+  if (value === null || value === undefined) {
+    return 'unpaid';
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === 'paid' ? 'paid' : 'unpaid';
+}
+
 // Auth functions
 function login(role, password) {
   if (AUTH[role] === password) {
@@ -126,24 +140,87 @@ async function loadDeliveries() {
     return;
   }
   
-  const deliveries = (result.data || []).map(delivery => ({
-    ...delivery,
-    date: normalizeDeliveryDate(delivery.date)
-  }));
+  const deliveries = (result.data || []).map(delivery => {
+    const totalCost = toNumber(delivery.total_cost);
+    const totalSell = toNumber(delivery.total_sell);
 
-  const html = deliveries.map(d => `
+    return {
+      ...delivery,
+      date: normalizeDeliveryDate(delivery.date),
+      payment_status: normalizePaymentStatus(delivery.payment_status),
+      total_cost: totalCost,
+      total_sell: totalSell,
+      margin: toNumber(totalSell - totalCost)
+    };
+  });
+
+  const html = deliveries.map(d => {
+    const isPaymentPaid = d.payment_status === 'paid';
+    const paymentStatusLabel = isPaymentPaid ? 'paid' : 'unpaid';
+    const canChangePayment = ['executor', 'manager'].includes(currentRole);
+    const showEditButton = currentRole === 'mom';
+    const totalCost = toNumber(d.total_cost);
+    const totalSell = toNumber(d.total_sell);
+    const margin = toNumber(d.margin);
+    const displayMargin = Math.abs(margin) < 0.005 ? 0 : margin;
+    const marginClass = margin < 0 ? 'metric-value margin-negative' : 'metric-value margin-positive';
+
+    return `
     <div class="delivery-card">
-      <div class="delivery-date">${formatDate(d.date)}</div>
-      <div class="delivery-totals">
-        <span>cost: ${d.total_cost.toFixed(2)}₾</span>
-        <span>sale: ${d.total_sell.toFixed(2)}₾</span>
+      <div class="delivery-header">
+        <div class="delivery-header-info">
+          <div class="delivery-date">${formatDate(d.date)}</div>
+          <span class="payment-badge ${isPaymentPaid ? 'paid' : 'unpaid'}">${paymentStatusLabel}</span>
+        </div>
+        ${showEditButton ? `<button class="button-compact secondary" onclick="editDelivery(${d.id})">edit</button>` : ''}
       </div>
-      <div class="delivery-margin">margin: ${d.margin.toFixed(2)}₾</div>
-      ${currentRole === 'mom' ? `<button onclick="editDelivery(${d.id})">edit</button>` : ''}
+      <div class="delivery-metrics">
+        <div class="metric">
+          <div class="metric-label">cost price</div>
+          <div class="metric-value cost">${totalCost.toFixed(2)}₾</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">sell price</div>
+          <div class="metric-value sell">${totalSell.toFixed(2)}₾</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">margin</div>
+          <div class="${marginClass}">${displayMargin.toFixed(2)}₾</div>
+        </div>
+      </div>
+      ${canChangePayment ? `
+        <div class="delivery-actions-row">
+          <div class="delivery-actions">
+            <button class="action-button mark-paid" onclick="markDeliveryPaid(${d.id})" ${isPaymentPaid ? 'disabled' : ''}>mark as paid</button>
+            <button class="action-button mark-unpaid" onclick="markDeliveryUnpaid(${d.id})" ${!isPaymentPaid ? 'disabled' : ''}>mark as unpaid</button>
+          </div>
+        </div>
+      ` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   document.getElementById('deliveriesList').innerHTML = html || '<p>no deliveries</p>';
+}
+
+async function markDeliveryPaid(id) {
+  const result = await apiCall('markDeliveryPaid', { id }, 'POST');
+
+  if (result.success) {
+    await loadDeliveries();
+  } else {
+    alert('error: ' + (result.error || 'unknown'));
+  }
+}
+
+async function markDeliveryUnpaid(id) {
+  const result = await apiCall('markDeliveryUnpaid', { id }, 'POST');
+
+  if (result.success) {
+    await loadDeliveries();
+  } else {
+    alert('error: ' + (result.error || 'unknown'));
+  }
 }
 
 // Load admin products
@@ -191,7 +268,7 @@ async function createDelivery() {
     }
   });
   
-  const result = await apiCall('createDelivery', { date, items, created_by: currentUser }, 'POST');
+  const result = await apiCall('createDelivery', { date, items, created_by: currentUser, payment_status: 'unpaid' }, 'POST');
   
   if (result.success) {
     alert('delivery created');

@@ -27,17 +27,37 @@
     .login-container { max-width: 400px; margin: 60px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .login-container h1 { font-size: 28px; margin-bottom: 10px; text-align: center; }
     .login-container p { text-align: center; margin-bottom: 30px; color: #7f8c8d; font-size: 14px; }
-    .delivery-card { background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .delivery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .delivery-date { font-weight: 600; font-size: 16px; cursor: pointer; color: #1a7f8f; }
-    .delivery-date:hover { text-decoration: underline; }
-    .delivery-actions { display: flex; gap: 8px; }
-    .delivery-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; font-size: 14px; }
-    .delivery-totals div { display: flex; flex-direction: column; }
-    .delivery-totals span:first-child { color: #7f8c8d; font-size: 12px; margin-bottom: 2px; }
-    .delivery-totals span:last-child { font-weight: 600; }
-    .margin-positive { color: #27ae60; }
-    .sell-positive { color: #27ae60; }
+    .delivery-card { background: #ffffff; padding: 24px; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 20px; }
+    .delivery-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .delivery-header-info { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .delivery-header-info:hover .delivery-date { color: #0f172a; }
+    .delivery-date { font-weight: 700; font-size: 18px; color: #111827; }
+    .payment-badge { font-weight: 600; font-size: 13px; text-transform: capitalize; padding: 4px 12px; border-radius: 16px; color: #ffffff; }
+    .payment-badge.paid { background: #10b981; }
+    .payment-badge.unpaid { background: #ef4444; }
+    .button-compact { padding: 6px 14px; font-size: 13px; border-radius: 9999px; }
+    .delivery-metrics { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; }
+    .metric { flex: 1 1 120px; display: flex; flex-direction: column; gap: 6px; }
+    .metric-label { text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; color: #6b7280; }
+    .metric-value { font-size: 18px; font-weight: 700; color: #374151; }
+    .metric-value.cost { color: #4b5563; }
+    .metric-value.sell { color: #10b981; }
+    .metric-value.margin-positive { color: #2563eb; }
+    .metric-value.margin-negative { color: #ef4444; }
+    .delivery-actions-row { display: flex; justify-content: flex-end; }
+    .delivery-actions { display: flex; gap: 10px; }
+    .action-button { padding: 6px 16px; border-radius: 9999px; font-size: 13px; font-weight: 600; transition: opacity 0.2s ease, transform 0.2s ease; }
+    .action-button.mark-paid { background: #10b981; color: #ffffff; }
+    .action-button.mark-unpaid { background: #f97316; color: #ffffff; }
+    .action-button:hover { transform: translateY(-1px); }
+    button:disabled, .action-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    @media (max-width: 600px) {
+      .delivery-card { padding: 20px; }
+      .delivery-metrics { gap: 16px; }
+      .metric { flex-basis: 100%; }
+      .delivery-actions-row { justify-content: stretch; }
+      .delivery-actions { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+    }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; font-weight: 600; margin-bottom: 5px; }
     .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
@@ -215,7 +235,21 @@
       return normalized || 'No date';
     }
 
+    function normalizePaymentStatus(value) {
+      if (value === null || value === undefined) {
+        return 'unpaid';
+      }
+
+      const normalized = String(value).trim().toLowerCase();
+      return normalized === 'paid' ? 'paid' : 'unpaid';
+    }
+
     const round2 = value => Math.round((Number(value) || 0) * 100) / 100;
+
+    const ensureNumber = value => {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : 0;
+    };
 
     function formatQuantity(value) {
       const number = Number(value) || 0;
@@ -323,42 +357,64 @@
         return;
       }
 
-      const deliveries = result.data.map(delivery => ({
-        ...delivery,
-        date: normalizeDeliveryDate(delivery.date)
-      }));
+      const deliveries = result.data.map(delivery => {
+        const totalCost = ensureNumber(delivery.total_cost);
+        const totalSell = ensureNumber(delivery.total_sell);
+
+        return {
+          ...delivery,
+          date: normalizeDeliveryDate(delivery.date),
+          payment_status: normalizePaymentStatus(delivery.payment_status),
+          total_cost: totalCost,
+          total_sell: totalSell,
+          margin: ensureNumber(totalSell - totalCost)
+        };
+      });
 
       allDeliveries = deliveries;
 
       const html = deliveries.slice().reverse().map(d => {
         const deliveryDate = formatDate(d.date);
+        const paymentStatus = normalizePaymentStatus(d.payment_status);
+        const isPaid = paymentStatus === 'paid';
+        const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
+        const marginValue = d.margin;
+        const displayMargin = Math.abs(marginValue) < 0.005 ? 0 : marginValue;
+        const marginClass = marginValue < 0 ? 'metric-value margin-negative' : 'metric-value margin-positive';
 
         return `
         <div class="delivery-card">
           <div class="delivery-header">
-            <div class="delivery-date" onclick="viewDelivery(${d.id})">${deliveryDate}</div>
+            <div class="delivery-header-info" onclick="viewDelivery(${d.id})">
+              <div class="delivery-date">${deliveryDate}</div>
+              <span class="payment-badge ${isPaid ? 'paid' : 'unpaid'}">${paymentStatus}</span>
+            </div>
             ${currentRole === 'executor' ? `
+              <button class="button-compact secondary" onclick="event.stopPropagation(); deleteDelivery(${d.id})">delete</button>
+            ` : ''}
+          </div>
+          <div class="delivery-metrics">
+            <div class="metric">
+              <div class="metric-label">cost price</div>
+              <div class="metric-value">${formatCurrency(d.total_cost)}₾</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">sell price</div>
+              <div class="metric-value sell">${formatCurrency(d.total_sell)}₾</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">margin</div>
+              <div class="${marginClass}">${formatCurrency(displayMargin)}₾</div>
+            </div>
+          </div>
+          ${showPaymentControls ? `
+            <div class="delivery-actions-row">
               <div class="delivery-actions">
-                <button class="danger" onclick="event.stopPropagation(); deleteDelivery(${d.id})">delete</button>
+                <button class="action-button mark-paid" onclick="event.stopPropagation(); markDeliveryPaid(${d.id})" ${isPaid ? 'disabled' : ''}>mark as paid</button>
+                <button class="action-button mark-unpaid" onclick="event.stopPropagation(); markDeliveryUnpaid(${d.id})" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
               </div>
-            ` : ''}
-          </div>
-          <div class="delivery-totals">
-            <div>
-              <span>cost price</span>
-              <span>${(d.total_cost || 0).toFixed(2)}₾</span>
             </div>
-            <div>
-              <span>sell price</span>
-              <span class="sell-positive">${(d.total_sell || 0).toFixed(2)}₾</span>
-            </div>
-            ${currentRole !== 'manager' ? `
-            <div>
-              <span>margin</span>
-              <span class="margin-positive">${(d.margin || 0).toFixed(2)}₾</span>
-            </div>
-            ` : ''}
-          </div>
+          ` : ''}
         </div>
       `;
       }).join('');
@@ -369,15 +425,46 @@
     // DELETE DELIVERY
     async function deleteDelivery(id) {
       if (!confirm('delete this delivery?')) return;
-      
+
       const result = await apiPost('deleteDelivery', { id });
-      
+
       if (result.success) {
         alert('delivery deleted');
         loadDeliveries();
       } else {
         alert('error: ' + (result.error || 'unknown'));
       }
+    }
+
+    async function updateDeliveryPaymentStatus(id, status) {
+      const action = status === 'paid' ? 'markDeliveryPaid' : 'markDeliveryUnpaid';
+      const result = await apiPost(action, { id });
+
+      if (result.success) {
+        if (Array.isArray(allDeliveries)) {
+          const target = allDeliveries.find(d => Number(d.id) === Number(id));
+          if (target) {
+            target.payment_status = status;
+          }
+        }
+
+        if (currentDelivery && Number(currentDelivery.id) === Number(id)) {
+          currentDelivery.payment_status = status;
+          renderDeliverySummary();
+        }
+
+        await loadDeliveries();
+      } else {
+        alert('error: ' + (result.error || 'unknown'));
+      }
+    }
+
+    function markDeliveryPaid(id) {
+      return updateDeliveryPaymentStatus(id, 'paid');
+    }
+
+    function markDeliveryUnpaid(id) {
+      return updateDeliveryPaymentStatus(id, 'unpaid');
     }
 
     // VIEW DELIVERY DETAIL
@@ -400,6 +487,7 @@
 
       currentDelivery = {
         ...delivery,
+        payment_status: normalizePaymentStatus(delivery.payment_status),
         date: normalizeDeliveryDate(delivery.date),
         items: (delivery.items || []).map(item => ({
           ...item,
@@ -446,6 +534,9 @@
       totals.totalCost = round2(totals.totalCost);
       totals.totalSell = round2(totals.totalSell);
       const margin = round2(totals.totalSell - totals.totalCost);
+      const paymentStatus = normalizePaymentStatus(currentDelivery.payment_status);
+      const isPaid = paymentStatus === 'paid';
+      const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
 
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
@@ -464,6 +555,15 @@
               <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
               <strong class="margin-positive">${formatCurrency(margin)}₾</strong>
             </div>
+            ` : ''}
+          </div>
+          <div class="delivery-payment" style="margin-top: 20px;">
+            <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
+            ${showPaymentControls ? `
+              <div class="payment-actions">
+                <button class="edit-btn" onclick="markDeliveryPaid(${currentDeliveryId})" ${isPaid ? 'disabled' : ''}>mark as paid</button>
+                <button class="danger" onclick="markDeliveryUnpaid(${currentDeliveryId})" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
+              </div>
             ` : ''}
           </div>
         </div>
@@ -641,7 +741,8 @@
       const result = await apiPost('createDelivery', {
         date: date,
         items: items,
-        created_by: currentUser
+        created_by: currentUser,
+        payment_status: 'unpaid'
       });
       
       if (result.success) {

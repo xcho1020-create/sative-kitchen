@@ -899,52 +899,150 @@ button.secondary:active {
 /* Delivery Cards */
 .delivery-card {
   background: var(--color-surface);
-  padding: var(--space-16);
+  padding: var(--space-24);
   border-radius: var(--radius-lg);
-  margin-bottom: var(--space-12);
-  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-16);
+  box-shadow: 0 2px 8px rgba(var(--color-slate-900-rgb), 0.1);
   border: 1px solid var(--color-card-border);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--space-20);
   transition: box-shadow var(--duration-normal) var(--ease-standard);
 }
 
 .delivery-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 6px 16px rgba(var(--color-slate-900-rgb), 0.12);
+}
+
+.delivery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-16);
+}
+
+.delivery-header-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  cursor: pointer;
+}
+
+.delivery-header-info:hover .delivery-date {
+  color: var(--color-primary);
 }
 
 .delivery-date {
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-lg);
-  min-width: 120px;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-xl);
   color: var(--color-text);
 }
 
-.delivery-totals {
-  display: flex;
-  gap: var(--space-20);
-  flex: 1;
-  margin: 0 var(--space-20);
+.payment-badge {
+  font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-sm);
+  text-transform: capitalize;
+  padding: var(--space-4) var(--space-12);
+  border-radius: var(--radius-full);
+  color: var(--color-white);
 }
 
-.delivery-totals span {
+.payment-badge.paid {
+  background: #10b981;
+}
+
+.payment-badge.unpaid {
+  background: #ef4444;
+}
+
+.button-compact {
+  padding: var(--space-6) var(--space-16);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-full);
+}
+
+.delivery-metrics {
+  display: flex;
+  gap: var(--space-20);
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.metric {
+  flex: 1 1 140px;
   display: flex;
   flex-direction: column;
+  gap: var(--space-6);
+}
+
+.metric-label {
+  text-transform: uppercase;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
   color: var(--color-text-secondary);
 }
 
-.delivery-margin {
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-success);
-  min-width: 120px;
-  text-align: right;
+.metric-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
 }
 
-.delivery-card button {
-  padding: var(--space-8) var(--space-16);
+.metric-value.cost {
+  color: #4b5563;
+}
+
+.metric-value.sell {
+  color: #10b981;
+}
+
+.metric-value.margin-positive {
+  color: #2563eb;
+}
+
+.metric-value.margin-negative {
+  color: #ef4444;
+}
+
+.delivery-actions-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.delivery-actions {
+  display: flex;
+  gap: var(--space-12);
+  flex-wrap: wrap;
+}
+
+.action-button {
+  padding: var(--space-6) var(--space-16);
+  border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  transition: transform var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+
+.action-button.mark-paid {
+  background: #10b981;
+  color: var(--color-white);
+}
+
+.action-button.mark-unpaid {
+  background: #f97316;
+  color: var(--color-white);
+}
+
+.action-button:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled,
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* New Delivery Form */
