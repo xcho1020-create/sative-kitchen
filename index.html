@@ -32,6 +32,12 @@
     .delivery-date { font-weight: 600; font-size: 16px; cursor: pointer; color: #1a7f8f; }
     .delivery-date:hover { text-decoration: underline; }
     .delivery-actions { display: flex; gap: 8px; }
+    .delivery-payment { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 12px; flex-wrap: wrap; }
+    .payment-status { font-weight: 600; text-transform: capitalize; }
+    .payment-status.paid { color: #27ae60; }
+    .payment-status.unpaid { color: #e74c3c; }
+    .payment-actions { display: flex; gap: 8px; }
+    .payment-actions button { padding: 6px 12px; font-size: 13px; }
     .delivery-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; font-size: 14px; }
     .delivery-totals div { display: flex; flex-direction: column; }
     .delivery-totals span:first-child { color: #7f8c8d; font-size: 12px; margin-bottom: 2px; }
@@ -215,6 +221,15 @@
       return normalized || 'No date';
     }
 
+    function normalizePaymentStatus(value) {
+      if (value === null || value === undefined) {
+        return 'unpaid';
+      }
+
+      const normalized = String(value).trim().toLowerCase();
+      return normalized === 'paid' ? 'paid' : 'unpaid';
+    }
+
     const round2 = value => Math.round((Number(value) || 0) * 100) / 100;
 
     function formatQuantity(value) {
@@ -325,13 +340,17 @@
 
       const deliveries = result.data.map(delivery => ({
         ...delivery,
-        date: normalizeDeliveryDate(delivery.date)
+        date: normalizeDeliveryDate(delivery.date),
+        payment_status: normalizePaymentStatus(delivery.payment_status)
       }));
 
       allDeliveries = deliveries;
 
       const html = deliveries.slice().reverse().map(d => {
         const deliveryDate = formatDate(d.date);
+        const paymentStatus = normalizePaymentStatus(d.payment_status);
+        const isPaid = paymentStatus === 'paid';
+        const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
 
         return `
         <div class="delivery-card">
@@ -359,6 +378,15 @@
             </div>
             ` : ''}
           </div>
+          <div class="delivery-payment">
+            <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
+            ${showPaymentControls ? `
+              <div class="payment-actions">
+                <button class="edit-btn" onclick="event.stopPropagation(); markDeliveryPaid(${d.id})" ${isPaid ? 'disabled' : ''}>mark as paid</button>
+                <button class="danger" onclick="event.stopPropagation(); markDeliveryUnpaid(${d.id})" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
+              </div>
+            ` : ''}
+          </div>
         </div>
       `;
       }).join('');
@@ -369,15 +397,46 @@
     // DELETE DELIVERY
     async function deleteDelivery(id) {
       if (!confirm('delete this delivery?')) return;
-      
+
       const result = await apiPost('deleteDelivery', { id });
-      
+
       if (result.success) {
         alert('delivery deleted');
         loadDeliveries();
       } else {
         alert('error: ' + (result.error || 'unknown'));
       }
+    }
+
+    async function updateDeliveryPaymentStatus(id, status) {
+      const action = status === 'paid' ? 'markDeliveryPaid' : 'markDeliveryUnpaid';
+      const result = await apiPost(action, { id });
+
+      if (result.success) {
+        if (Array.isArray(allDeliveries)) {
+          const target = allDeliveries.find(d => Number(d.id) === Number(id));
+          if (target) {
+            target.payment_status = status;
+          }
+        }
+
+        if (currentDelivery && Number(currentDelivery.id) === Number(id)) {
+          currentDelivery.payment_status = status;
+          renderDeliverySummary();
+        }
+
+        await loadDeliveries();
+      } else {
+        alert('error: ' + (result.error || 'unknown'));
+      }
+    }
+
+    function markDeliveryPaid(id) {
+      return updateDeliveryPaymentStatus(id, 'paid');
+    }
+
+    function markDeliveryUnpaid(id) {
+      return updateDeliveryPaymentStatus(id, 'unpaid');
     }
 
     // VIEW DELIVERY DETAIL
@@ -400,6 +459,7 @@
 
       currentDelivery = {
         ...delivery,
+        payment_status: normalizePaymentStatus(delivery.payment_status),
         date: normalizeDeliveryDate(delivery.date),
         items: (delivery.items || []).map(item => ({
           ...item,
@@ -446,6 +506,9 @@
       totals.totalCost = round2(totals.totalCost);
       totals.totalSell = round2(totals.totalSell);
       const margin = round2(totals.totalSell - totals.totalCost);
+      const paymentStatus = normalizePaymentStatus(currentDelivery.payment_status);
+      const isPaid = paymentStatus === 'paid';
+      const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
 
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
@@ -464,6 +527,15 @@
               <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
               <strong class="margin-positive">${formatCurrency(margin)}₾</strong>
             </div>
+            ` : ''}
+          </div>
+          <div class="delivery-payment" style="margin-top: 20px;">
+            <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
+            ${showPaymentControls ? `
+              <div class="payment-actions">
+                <button class="edit-btn" onclick="markDeliveryPaid(${currentDeliveryId})" ${isPaid ? 'disabled' : ''}>mark as paid</button>
+                <button class="danger" onclick="markDeliveryUnpaid(${currentDeliveryId})" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
+              </div>
             ` : ''}
           </div>
         </div>
@@ -641,7 +713,8 @@
       const result = await apiPost('createDelivery', {
         date: date,
         items: items,
-        created_by: currentUser
+        created_by: currentUser,
+        payment_status: 'unpaid'
       });
       
       if (result.success) {
