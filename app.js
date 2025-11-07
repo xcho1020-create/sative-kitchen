@@ -21,6 +21,57 @@ async function apiCall(action, data = null, method = 'GET') {
   }
 }
 
+const TBILISI_TIMEZONE = 'Asia/Tbilisi';
+const tbilisiDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: TBILISI_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+});
+
+function parseTbilisiDate(value) {
+  if (value === null || value === undefined) return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    const fromNumber = new Date(value);
+    return Number.isNaN(fromNumber.getTime()) ? null : fromNumber;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return new Date(`${trimmed}T00:00:00+04:00`);
+    }
+
+    const numeric = Number(trimmed);
+    if (!Number.isNaN(numeric)) {
+      return parseTbilisiDate(numeric);
+    }
+
+    const parsed = new Date(trimmed);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+}
+
+function normalizeDeliveryDate(value) {
+  const parsed = parseTbilisiDate(value);
+  if (!parsed) return '';
+  return tbilisiDateFormatter.format(parsed);
+}
+
+function formatDate(value) {
+  const normalized = normalizeDeliveryDate(value);
+  return normalized || 'No date';
+}
+
 // Auth functions
 function login(role, password) {
   if (AUTH[role] === password) {
@@ -75,9 +126,14 @@ async function loadDeliveries() {
     return;
   }
   
-  const html = result.data.map(d => `
+  const deliveries = (result.data || []).map(delivery => ({
+    ...delivery,
+    date: normalizeDeliveryDate(delivery.date)
+  }));
+
+  const html = deliveries.map(d => `
     <div class="delivery-card">
-      <div class="delivery-date">${d.date}</div>
+      <div class="delivery-date">${formatDate(d.date)}</div>
       <div class="delivery-totals">
         <span>cost: ${d.total_cost.toFixed(2)}₾</span>
         <span>sale: ${d.total_sell.toFixed(2)}₾</span>
@@ -86,7 +142,7 @@ async function loadDeliveries() {
       ${currentRole === 'mom' ? `<button onclick="editDelivery(${d.id})">edit</button>` : ''}
     </div>
   `).join('');
-  
+
   document.getElementById('deliveriesList').innerHTML = html || '<p>no deliveries</p>';
 }
 
@@ -114,7 +170,13 @@ async function loadAdminProducts() {
 
 // Create new delivery
 async function createDelivery() {
-  const date = document.getElementById('deliveryDate').value;
+  const dateInput = document.getElementById('deliveryDate');
+  const date = normalizeDeliveryDate(dateInput ? dateInput.value : '');
+
+  if (!date) {
+    alert('select delivery date');
+    return;
+  }
   const items = [];
   
   document.querySelectorAll('.delivery-item-row').forEach(row => {

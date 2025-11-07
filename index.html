@@ -164,19 +164,55 @@
     let hasChanges = false;
     let selectedRole = null;
 
-    const nowTbs = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tbilisi' }));
-    const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const TBILISI_TIMEZONE = 'Asia/Tbilisi';
+    const tbilisiDateFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: TBILISI_TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
 
-    function formatDate(value) {
-      if (!value) return 'No date';
+    function parseTbilisiDate(value) {
+      if (value === null || value === undefined) return null;
+
+      if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+      }
+
+      if (typeof value === 'number') {
+        const fromNumber = new Date(value);
+        return Number.isNaN(fromNumber.getTime()) ? null : fromNumber;
+      }
+
       if (typeof value === 'string') {
         const trimmed = value.trim();
-        if (trimmed.includes('T')) {
-          return trimmed.split('T')[0];
+        if (!trimmed) return null;
+
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+          return new Date(`${trimmed}T00:00:00+04:00`);
         }
-        return trimmed;
+
+        const numeric = Number(trimmed);
+        if (!Number.isNaN(numeric)) {
+          return parseTbilisiDate(numeric);
+        }
+
+        const parsed = new Date(trimmed);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
       }
-      return value;
+
+      return null;
+    }
+
+    function normalizeDeliveryDate(value) {
+      const parsed = parseTbilisiDate(value);
+      if (!parsed) return '';
+      return tbilisiDateFormatter.format(parsed);
+    }
+
+    function formatDate(value) {
+      const normalized = normalizeDeliveryDate(value);
+      return normalized || 'No date';
     }
 
     const round2 = value => Math.round((Number(value) || 0) * 100) / 100;
@@ -286,10 +322,15 @@
         document.getElementById('deliveriesList').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">no deliveries yet</p>';
         return;
       }
-      
-      allDeliveries = result.data;
-      
-      const html = result.data.reverse().map(d => {
+
+      const deliveries = result.data.map(delivery => ({
+        ...delivery,
+        date: normalizeDeliveryDate(delivery.date)
+      }));
+
+      allDeliveries = deliveries;
+
+      const html = deliveries.slice().reverse().map(d => {
         const deliveryDate = formatDate(d.date);
 
         return `
@@ -356,9 +397,10 @@
       }
       
       const delivery = result.data;
-      
+
       currentDelivery = {
         ...delivery,
+        date: normalizeDeliveryDate(delivery.date),
         items: (delivery.items || []).map(item => ({
           ...item,
           quantity: Number(item.quantity) || 0,
@@ -529,8 +571,11 @@
     // LOAD PRODUCTS FOR FORM
     async function showNewDelivery() {
       showPage('new-delivery');
-      const dateInput = document.getElementById('deliveryDate'); const selectedDate = new Date(dateInput.value + 'T00:00:00+04:00'); // так дата всегда будет тбилисская
-      if (dateInput) dateInput.value = ymd(nowTbs());
+      const dateInput = document.getElementById('deliveryDate');
+      if (dateInput) {
+        const normalizedValue = normalizeDeliveryDate(dateInput.value);
+        dateInput.value = normalizedValue || normalizeDeliveryDate(new Date());
+      }
       document.getElementById('productsForm').innerHTML = '<div class="loading">loading products...</div>';
       
       const result = await apiCall('getProducts');
@@ -562,7 +607,14 @@
 
     // SAVE DELIVERY
     async function saveDelivery() {
-      const date = ymd(nowTbs());
+      const dateInput = document.getElementById('deliveryDate');
+      const rawDate = dateInput ? dateInput.value : '';
+      const date = normalizeDeliveryDate(rawDate);
+
+      if (!date) {
+        alert('select delivery date');
+        return;
+      }
 
       const items = [];
       document.querySelectorAll('.product-item').forEach(row => {
@@ -682,10 +734,11 @@
         showPage('login');
       }
       
-      // Tbilisi timezone UTC+4
-      const today = ymd(nowTbs());
-      const dateInput = document.getElementById('deliveryDate'); const selectedDate = new Date(dateInput.value + 'T00:00:00+04:00'); // так дата всегда будет тбилисская
-      if (dateInput) dateInput.value = today;
+      const dateInput = document.getElementById('deliveryDate');
+      if (dateInput) {
+        const normalizedValue = normalizeDeliveryDate(dateInput.value);
+        dateInput.value = normalizedValue || normalizeDeliveryDate(new Date());
+      }
       
       // Admin page load handlers
       const observer = new MutationObserver(() => {
