@@ -27,6 +27,123 @@
     .login-container { max-width: 400px; margin: 60px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .login-container h1 { font-size: 28px; margin-bottom: 10px; text-align: center; }
     .login-container p { text-align: center; margin-bottom: 30px; color: #7f8c8d; font-size: 14px; }
+    /* New Delivery Card Layout */
+    .delivery-card-new {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      transition: box-shadow 0.2s ease;
+    }
+    .delivery-card-new:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .card-main {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      flex: 1;
+    }
+    .card-info {
+      min-width: 180px;
+    }
+    .delivery-date-new {
+      font-weight: 700;
+      font-size: 18px;
+      color: #2c3e50;
+      cursor: pointer;
+      display: block;
+      margin-bottom: 6px;
+      text-decoration: none;
+    }
+    .delivery-date-new:hover {
+      color: #1a7f8f;
+      text-decoration: underline;
+    }
+    .payment-status-new {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .payment-status-new.paid {
+      color: #2e7d32;
+    }
+    .payment-status-new.unpaid {
+      color: #d32f2f;
+    }
+    .card-sell {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 140px;
+    }
+    .label-new {
+      font-size: 12px;
+      color: #7f8c8d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .value-new {
+      font-size: 20px;
+      font-weight: 700;
+      color: #27ae60;
+    }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn-paid, .btn-unpaid, .btn-delete {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-paid {
+      background: #1a7f8f;
+      color: white;
+    }
+    .btn-paid:hover:not(:disabled) {
+      background: #156873;
+    }
+    .btn-paid:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .btn-unpaid {
+      background: #e67e22;
+      color: white;
+    }
+    .btn-unpaid:hover:not(:disabled) {
+      background: #d35400;
+    }
+    .btn-unpaid:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .btn-delete {
+      background: #e74c3c;
+      color: white;
+    }
+    .btn-delete:hover {
+      background: #c0392b;
+    }
+    
+    /* Old delivery card styles (kept for backward compatibility if needed) */
     .delivery-card { background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .delivery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .delivery-date { font-weight: 600; font-size: 16px; cursor: pointer; color: #1a7f8f; }
@@ -261,6 +378,23 @@
     // ============================================================================
     
     /**
+     * Role-based visibility helpers
+     */
+    function getCurrentRole() {
+      return sessionStorage.getItem('userRole') || currentRole || 'executor';
+    }
+    
+    function canSeeCost() {
+      const role = getCurrentRole();
+      return role === 'admin' || role === 'executor';
+    }
+    
+    function canSeeMargin() {
+      const role = getCurrentRole();
+      return role === 'admin' || role === 'executor';
+    }
+    
+    /**
      * Normalize payment status to 'paid' or 'unpaid'
      */
     function normalizePaymentStatus(value) {
@@ -444,15 +578,51 @@
         return;
       }
 
-      const deliveries = result.data.map(delivery => ({
-        ...delivery,
-        date: normalizeDeliveryDate(delivery.date),
-        payment_status: normalizePaymentStatus(delivery.payment_status),
-        // Use total_cost from backend, fallback to cost_price (legacy), then 0
-        total_cost: Number(delivery.total_cost ?? delivery.cost_price ?? 0),
-        total_sell: Number(delivery.total_sell ?? delivery.sell_price ?? 0),
-        margin: Number(delivery.margin ?? 0)
-      }));
+      const deliveries = result.data.map(delivery => {
+        // Helper to safely parse numeric values (handles strings with commas, spaces, etc)
+        const parseNumeric = (value) => {
+          if (value === null || value === undefined || value === '') return 0;
+          if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+          if (typeof value === 'string') {
+            // Remove spaces and replace comma with dot
+            const cleaned = value.replace(/\s/g, '').replace(',', '.');
+            const parsed = Number(cleaned);
+            return Number.isFinite(parsed) ? parsed : 0;
+          }
+          return 0;
+        };
+        
+        // Calculate from items if total fields are missing or zero
+        let totalCost = parseNumeric(delivery.total_cost ?? delivery.cost_price);
+        let totalSell = parseNumeric(delivery.total_sell ?? delivery.sell_price);
+        let margin = parseNumeric(delivery.margin);
+        
+        // If backend didn't provide totals and we have items, calculate them
+        if (totalCost === 0 && delivery.items && Array.isArray(delivery.items) && delivery.items.length > 0) {
+          totalCost = delivery.items.reduce((sum, item) => {
+            const qty = parseNumeric(item.quantity);
+            const cost = parseNumeric(item.cost_price);
+            return sum + (qty * cost);
+          }, 0);
+          
+          totalSell = delivery.items.reduce((sum, item) => {
+            const qty = parseNumeric(item.quantity);
+            const sell = parseNumeric(item.sell_price);
+            return sum + (qty * sell);
+          }, 0);
+          
+          margin = totalSell - totalCost;
+        }
+        
+        return {
+          ...delivery,
+          date: normalizeDeliveryDate(delivery.date),
+          payment_status: normalizePaymentStatus(delivery.payment_status),
+          total_cost: totalCost,
+          total_sell: totalSell,
+          margin: margin
+        };
+      });
 
       allDeliveries = deliveries;
 
@@ -467,41 +637,33 @@
         const deliveryDate = formatDate(d.date);
         const paymentStatus = normalizePaymentStatus(d.payment_status);
         const isPaid = paymentStatus === 'paid';
-        const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
+        const role = getCurrentRole();
+        const showPaymentControls = role === 'executor' || role === 'manager';
+        const canDelete = role === 'executor';
+        
+        const sellPrice = round2(d.total_sell || 0);
 
         return `
-        <div class="delivery-card">
-          <div class="delivery-header">
-            <div class="delivery-date" onclick="viewDelivery('${d.id}')">${deliveryDate}</div>
-            ${currentRole === 'executor' ? `
-              <div class="delivery-actions">
-                <button class="danger" onclick="event.stopPropagation(); deleteDelivery('${d.id}')">delete</button>
+        <div class="delivery-card-new">
+          <div class="card-main">
+            <div class="card-info">
+              <a class="delivery-date-new" onclick="viewDelivery('${d.id}')">${deliveryDate}</a>
+              <div class="payment-status-new ${isPaid ? 'paid' : 'unpaid'}">
+                Payment: ${isPaid ? 'Paid' : 'Unpaid'}
               </div>
-            ` : ''}
+            </div>
+            <div class="card-sell">
+              <span class="label-new">sell price</span>
+              <span class="value-new">${formatMoney(sellPrice)}</span>
+            </div>
           </div>
-          <div class="delivery-totals">
-            <div>
-              <span>cost price</span>
-              <span>${formatMoney(d.total_cost)}</span>
-            </div>
-            <div>
-              <span>sell price</span>
-              <span class="sell-positive">${formatMoney(d.total_sell)}</span>
-            </div>
-            ${currentRole !== 'manager' ? `
-            <div>
-              <span>margin</span>
-              <span class="margin-positive">${formatMoney(d.margin)}</span>
-            </div>
-            ` : ''}
-          </div>
-          <div class="delivery-payment">
-            <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
+          <div class="card-actions">
             ${showPaymentControls ? `
-              <div class="payment-actions">
-                <button class="edit-btn" onclick="event.stopPropagation(); markDeliveryPaid('${d.id}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
-                <button class="danger" onclick="event.stopPropagation(); markDeliveryUnpaid('${d.id}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
-              </div>
+              <button class="btn-paid" onclick="event.stopPropagation(); markDeliveryPaid('${d.id}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
+              <button class="btn-unpaid" onclick="event.stopPropagation(); markDeliveryUnpaid('${d.id}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
+            ` : ''}
+            ${canDelete ? `
+              <button class="btn-delete" onclick="event.stopPropagation(); deleteDelivery('${d.id}')">delete</button>
             ` : ''}
           </div>
         </div>
@@ -625,26 +787,37 @@
       const margin = round2(totals.totalSell - totals.totalCost);
       const paymentStatus = normalizePaymentStatus(currentDelivery.payment_status);
       const isPaid = paymentStatus === 'paid';
-      const showPaymentControls = currentRole === 'executor' || currentRole === 'manager';
+      const role = getCurrentRole();
+      const showPaymentControls = role === 'executor' || role === 'manager';
+      const showCost = canSeeCost();
+      const showMargin = canSeeMargin();
 
       const createdAt = formatDateTime(currentDelivery.created_at);
       const updatedAt = formatDateTime(currentDelivery.updated_at);
       const createdBy = currentDelivery.created_by || '';
       const updatedBy = currentDelivery.updated_by || '';
+      
+      // Build columns array based on visibility
+      const columns = [];
+      if (showCost) columns.push('cost');
+      columns.push('sell');
+      if (showMargin) columns.push('margin');
 
       document.getElementById('deliveryDetailSummary').innerHTML = `
         <div class="detail-summary">
           <h3>Summary</h3>
-          <div style="display: grid; grid-template-columns: ${currentRole === 'manager' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'}; gap: 15px;">
+          <div style="display: grid; grid-template-columns: repeat(${columns.length}, 1fr); gap: 15px;">
+            ${showCost ? `
             <div>
               <span style="color: #7f8c8d; font-size: 12px;">cost price</span><br>
               <strong>${formatCurrency(totals.totalCost)}₾</strong>
             </div>
+            ` : ''}
             <div>
               <span style="color: #7f8c8d; font-size: 12px;">sell price</span><br>
               <strong class="sell-positive">${formatCurrency(totals.totalSell)}₾</strong>
             </div>
-            ${currentRole !== 'manager' ? `
+            ${showMargin ? `
             <div>
               <span style="color: #7f8c8d; font-size: 12px;">margin</span><br>
               <strong class="margin-positive">${formatCurrency(margin)}₾</strong>
@@ -672,6 +845,8 @@
 
     function renderDeliveryItems(canEdit) {
       if (!currentDelivery) return;
+      
+      const showCost = canSeeCost();
 
       const html = currentDelivery.items.map((item, index) => {
         const quantity = Number(item.quantity) || 0;
@@ -685,7 +860,7 @@
             <h4>${item.product_name}</h4>
             <div class="info">
               <span>${item.unit}</span>
-              <span>cost: ${formatCurrency(costPrice, 1)}₾</span>
+              ${showCost ? `<span>cost: ${formatCurrency(costPrice, 1)}₾</span>` : ''}
               <span>sell: ${formatCurrency(sellPrice, 1)}₾</span>
             </div>
             <div class="info">
@@ -697,7 +872,7 @@
               ` : `
                 <span data-quantity-display="${index}">quantity: ${formatQuantity(quantity)}</span>
               `}
-              <span>Total cost: <strong data-total-cost="${index}">${formatCurrency(totalCost)}</strong>₾</span>
+              ${showCost ? `<span>Total cost: <strong data-total-cost="${index}">${formatCurrency(totalCost)}</strong>₾</span>` : ''}
               <span>Total sell: <strong data-total-sell="${index}">${formatCurrency(totalSell)}</strong>₾</span>
             </div>
           </div>
