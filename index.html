@@ -64,8 +64,15 @@
     .container {
       max-width: 900px;
       margin: 0 auto;
-      padding: 0 8px;
+      padding: 0;
     }
+    /* inner padding for text/form areas, not for edge-to-edge tables/cards */
+    .container > .page-header,
+    .container > .section-label,
+    .container > .kpi-row,
+    .container > .summary-card,
+    .container > .info-note,
+    .container > .admin-nav { padding-left: 8px; padding-right: 8px; }
     [data-page] { display: none; }
 
     /* ── Header ─────────────────────────────────────────────── */
@@ -341,9 +348,9 @@
   border: 1px solid var(--border);
   border-left: 3px solid transparent;
   }
-    .dl-card:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
-    .dl-card:last-child  { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
-    .dl-card:only-child  { border-radius: var(--radius-lg); }
+    .dl-card:first-child { border-radius: 0; }
+    .dl-card:last-child  { border-radius: 0; }
+    .dl-card:only-child  { border-radius: 0; }
     .dl-card.is-unpaid   { border-left-color: var(--red); }
     .dl-card.is-paid     { border-left-color: var(--green); }
   .dl-card-top {
@@ -442,7 +449,7 @@
 
     /* ── Products form (new delivery) ───────────────────────── */
     .products-form {
-      margin: 0 -8px 16px -8px;
+      margin-bottom: 16px;
     }
     .products-form .data-table {
       border-radius: 0;
@@ -450,7 +457,7 @@
       border-right: none;
     }
 
-    /* ── Login page ─────────────────────────────────────────── */
+    /* ── Login page ───────────────────────────────────────���─── */
     .login-wrap {
       min-height: 100vh;
       display: flex;
@@ -645,13 +652,15 @@
           <h1>new delivery</h1>
         </div>
       </div>
-      <div class="form-group" style="max-width:200px">
+      <div class="form-group" style="max-width:200px; padding-left:8px; padding-right:8px">
         <label class="form-label">date</label>
         <input type="date" id="deliveryDate" class="form-control">
       </div>
       <div class="section-label">products — enter quantities</div>
       <div id="productsForm" class="products-form loading">loading products…</div>
-      <button class="btn btn-primary btn-lg btn-full mt-16" onclick="saveDelivery()">create delivery</button>
+      <div style="padding:0 8px">
+        <button class="btn btn-primary btn-lg btn-full mt-16" onclick="saveDelivery()">create delivery</button>
+      </div>
     </div>
   </div>
 
@@ -668,7 +677,9 @@
       <div id="deliveryEditNotice" class="info-note" style="display:none"></div>
       <div class="section-label">products</div>
       <div id="deliveryDetailProducts"></div>
-      <button class="btn btn-primary btn-lg btn-full mt-16" id="saveChangesBtn" onclick="saveDeliveryChanges()" style="display:none">save changes</button>
+      <div style="padding:0 8px">
+        <button class="btn btn-primary btn-lg btn-full mt-16" id="saveChangesBtn" onclick="saveDeliveryChanges()" style="display:none">save changes</button>
+      </div>
     </div>
   </div>
 
