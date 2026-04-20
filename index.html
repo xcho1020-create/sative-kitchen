@@ -4,521 +4,861 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sative Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Tokens ─────────────────────────────────────────────── */
     :root {
-      --container-max: 1080px;
-      --space-1: 8px;
-      --space-2: 12px;
-      --space-3: 16px;
-      --space-4: 20px;
+      --orange:    #ff9500;
+      --orange-d:  #cc7700;
+      --orange-l:  #fff4e0;
+      --gray:      #646464;
+      --gray-l:    #f0efed;
+      --gray-m:    #d4d2ce;
+      --beige:     #baa58a;
+      --beige-l:   #f5f0e8;
+      --black:     #000000;
+      --white:     #ffffff;
+      --bg:        #f7f5f2;
+      --surface:   #ffffff;
+      --border:    #d4d2ce;
+      --text:      #000000;
+      --sub:       #646464;
+      --green:     #2a7a46;
+      --green-l:   #e8f5ee;
+      --green-b:   #b2d9c0;
+      --red:       #cc1a2e;
+      --red-l:     #fde8ea;
+      --red-b:     #f5b8c0;
+      --font:      'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      --radius:    5px;
+      --radius-lg: 8px;
+      --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --nav-h:     52px;
+      --bottom-h:  56px;
     }
+
+    /* ── Base ─────────────────────────────────────────────── */
+    html { font-size: 14px; -webkit-font-smoothing: antialiased; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f8f9fa;
-      color: #2c3e50;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
       line-height: 1.5;
       overflow-x: hidden;
+      padding-bottom: var(--bottom-h);
     }
+    @media (min-width: 640px) { body { padding-bottom: 0; } }
+
+    /* ── Typography ─────────────────────────────────────────── */
+    h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+    h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+    h3 { font-size: 15px; font-weight: 600; }
+    h4 { font-size: 14px; font-weight: 600; }
+
+    /* ── Layout ─────────────────────────────────────────────── */
     .container {
-      max-width: var(--container-max);
+      max-width: 900px;
       margin: 0 auto;
-      padding: clamp(12px, 2vw, 24px);
+      padding: 0;
     }
-    header { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
-    header .container { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); padding: clamp(12px, 2vw, 20px); flex-wrap: wrap; }
-    .logo { font-size: clamp(18px, 2.4vw, 24px); font-weight: 700; color: #2c3e50; text-transform: lowercase; }
-    .user-info { display: flex; align-items: center; gap: var(--space-2); font-size: 14px; flex-wrap: wrap; }
-    .role-badge { background: #e8f4f8; color: #1a7f8f; padding: 6px 12px; border-radius: 20px; font-weight: 600; }
-    button { background: #2c3e50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; }
-    button:hover { background: #1a252f; }
-    button:focus-visible { outline: 2px solid #1a7f8f; outline-offset: 2px; }
-    button.secondary { background: #95a5a6; }
-    button.secondary:hover { background: #7f8c8d; }
-    button.primary { background: #1a7f8f; }
-    button.primary:hover { background: #156873; }
-    button.danger { background: #e74c3c; padding: 6px 12px; font-size: 13px; }
-    button.danger:hover { background: #c0392b; }
-    button.edit-btn { background: #3498db; padding: 6px 12px; font-size: 13px; }
-    button.edit-btn:hover { background: #2980b9; }
+    /* inner padding for text/form areas, not for edge-to-edge tables/cards */
+    .container > .page-header,
+    .container > .section-label,
+    .container > .kpi-row,
+    .container > .summary-card,
+    .container > .info-note,
+    .container > .admin-nav { padding-left: 8px; padding-right: 8px; }
     [data-page] { display: none; }
-    .login-container { max-width: 400px; margin: 60px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .login-container h1 { font-size: 28px; margin-bottom: 10px; text-align: center; }
-    .login-container p { text-align: center; margin-bottom: 30px; color: #7f8c8d; font-size: 14px; }
-    .deliveries-list { display: grid; gap: var(--space-2); }
-    .delivery-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: clamp(12px, 2vw, 20px);
-      box-shadow: 0 1px 2px rgba(0,0,0,.06);
-      display: grid;
-      gap: var(--space-2);
+
+    /* ── Header ─────────────────────────────────────────────── */
+    #header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .delivery-card__row { display: grid; gap: var(--space-2); }
-    .delivery-card__header { align-content: start; }
-    .delivery-date {
-      font-weight: 700;
-      font-size: clamp(18px, 2.4vw, 22px);
-      text-decoration: none;
-      color: #2c3e50;
-      cursor: pointer;
+    #header::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--orange);
     }
-    .delivery-date:hover,
-    .delivery-date:focus-visible { color: #1a7f8f; text-decoration: underline; }
-    .payment-line {
-      color: #2e7d32;
-      font-weight: 600;
-      font-size: clamp(13px, 1.8vw, 14px);
-      text-transform: capitalize;
-    }
-    .payment-line.unpaid { color: #d32f2f; }
-    .delivery-card__totals .kpi { text-align: left; }
-    .kpi .label { display: block; font-size: clamp(11px, 1.6vw, 12px); color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.4px; }
-    .kpi .val { display: block; font-weight: 700; font-size: clamp(16px, 2vw, 18px); color: #27ae60; }
-    .delivery-card__actions {
+    #header .container {
       display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-2);
-      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--nav-h);
+      gap: 12px;
     }
-    .delivery-card__actions .btn {
-      flex: 1 1 calc(50% - var(--space-2));
-      min-height: 44px;
-      border-radius: 8px;
-      font-size: 14px;
+    .logo {
+      font-size: 15px;
       font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+    .logo span { color: var(--orange); }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .role-badge {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--sub);
+      background: var(--gray-l);
+      padding: 4px 10px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+    }
+
+    /* Desktop nav tabs */
+    .nav-tabs {
+      display: none;
+      align-items: center;
+      gap: 0;
+      height: 100%;
+    }
+    .nav-tab {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--sub);
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 3px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+      position: relative;
+      top: 1px; /* align border with header bottom border */
+    }
+    .nav-tab:hover { color: var(--text); background: none; }
+    .nav-tab.active { color: var(--text); font-weight: 600; border-bottom-color: var(--orange); background: none; }
+    @media (min-width: 640px) {
+      .nav-tabs { display: flex; }
+    }
+
+    /* Mobile bottom nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: var(--bottom-h);
+      background: var(--white);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+    }
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--sub);
+      font-size: 10px;
+      font-family: var(--font);
+      transition: color 0.15s;
+      border-radius: 6px;
+      margin: 4px;
+    }
+    .bottom-nav-item.active { color: var(--orange); background: var(--orange-l); }
+    .bottom-nav-item svg { width: 20px; height: 20px; }
+    @media (min-width: 640px) { .bottom-nav { display: none; } }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    button { font-family: var(--font); cursor: pointer; border: none; transition: all 0.15s; }
+    button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1;
+      white-space: nowrap;
+      min-height: 34px;
+    }
+    .btn-primary   { background: var(--orange); color: #fff; border: 1px solid var(--orange); }
+    .btn-primary:hover { background: var(--orange-d); border-color: var(--orange-d); }
+    .btn-secondary { background: var(--gray-l); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #e8e6e2; }
+    .btn-ghost     { background: none; color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--gray-l); }
+    .btn-danger    { background: var(--red); color: #fff; border: 1px solid var(--red); }
+    .btn-danger:hover { background: #a8152a; }
+    .btn-sm { padding: 5px 10px; font-size: 11px; min-height: 26px; }
+    .btn-lg { padding: 12px 20px; font-size: 14px; min-height: 44px; }
+    .btn-full { width: 100%; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Pay / unpay */
+    .btn-mark-paid   { background: var(--green-l); color: var(--green); border: 1px solid var(--green-b); }
+    .btn-mark-paid:hover:not(:disabled)   { background: #d4eedd; }
+    .btn-mark-unpaid { background: var(--red-l);   color: var(--red);   border: 1px solid var(--red-b); }
+    .btn-mark-unpaid:hover:not(:disabled) { background: #fbd4d8; }
+
+    /* ── Badge ─────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.4;
+      border: 1px solid;
+    }
+    .badge-paid   { background: var(--green-l); color: var(--green); border-color: var(--green-b); }
+    .badge-unpaid { background: var(--red-l);   color: var(--red);   border-color: var(--red-b); }
+
+    /* ── Form elements ─────────────────────────────────────── */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--sub);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      transition: border-color 0.15s;
+      min-height: 38px;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255,149,0,0.12);
+    }
+    input[type="number"].form-control { -moz-appearance: textfield; }
+    input[type="number"].form-control::-webkit-outer-spin-button,
+    input[type="number"].form-control::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    /* qty input in tables */
+    .qty-input {
+      width: 64px;
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      text-align: center;
+      min-height: 32px;
+    }
+    .qty-input:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255,149,0,0.12);
+    }
+
+    /* ── Page header bar ─────────────────────────────────────── */
+  .page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 12px 0 8px;
+  gap: 12px;
+  }
+    .page-header h1 { line-height: 1.2; }
+    .page-sub {
+      font-size: 12px;
+      color: var(--sub);
+      margin-top: 2px;
+    }
+
+    /* ── Table ─────────────────────────────────────────────── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .data-table thead tr {
+      background: var(--gray-l);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table thead th {
+      padding: 9px 14px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--sub);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      text-align: left;
       white-space: nowrap;
     }
-    .btn { padding: 10px 16px; border: none; cursor: pointer; transition: 0.2s ease; }
-    .btn:focus-visible { outline: 2px solid #1a7f8f; outline-offset: 2px; }
-    .btn-paid { background: #1a7f8f; color: #fff; }
-    .btn-paid:hover:not(:disabled) { background: #156873; }
-    .btn-paid:disabled { background: #95a5a6; cursor: not-allowed; opacity: 0.6; }
-    .btn-unpaid { background: #e67e22; color: #fff; }
-    .btn-unpaid:hover:not(:disabled) { background: #d35400; }
-    .btn-unpaid:disabled { background: #95a5a6; cursor: not-allowed; opacity: 0.6; }
-    .btn-delete { background: #e74c3c; color: #fff; }
-    .btn-delete:hover { background: #c0392b; }
-    .delivery-card__totals { display: grid; gap: var(--space-1); }
+    .data-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table tbody tr:hover { background: #eceae6; }
+    .data-table td {
+      padding: 12px 14px;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    .td-name { font-weight: 600; color: var(--text); }
+    .td-sub  { font-size: 11px; color: var(--sub); margin-top: 2px; }
+    .td-amount { font-weight: 600; font-size: 14px; }
+    .td-muted  { color: var(--sub); }
+    .td-green  { color: var(--green); font-weight: 600; }
+    .td-actions { white-space: nowrap; }
+    .td-right { text-align: right; }
 
-    /* tablet ≥ 640px */
+    /* ── Delivery list (mobile: stacked cards) ─────────────── */
+    .delivery-list { display: flex; flex-direction: column; gap: 1px; }
+
+    /* Mobile card */
+  .dl-card {
+  background: var(--white);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  }
+    .dl-card:first-child { border-radius: 0; }
+    .dl-card:last-child  { border-radius: 0; }
+    .dl-card:only-child  { border-radius: 0; }
+    .dl-card.is-unpaid   { border-left-color: var(--red); }
+    .dl-card.is-paid     { border-left-color: var(--green); }
+  .dl-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+    }
+    .dl-date {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .dl-date:hover { color: var(--orange); }
+    .dl-amount { font-size: 17px; font-weight: 600; color: var(--text); }
+    .dl-amount-label { font-size: 10px; color: var(--sub); text-align: right; margin-top: 1px; }
+    .dl-card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .dl-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+
+    /* Desktop: replace cards with table */
     @media (min-width: 640px) {
-      .deliveries-list { gap: var(--space-3); }
-      .delivery-card {
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        gap: var(--space-3);
+      .delivery-list { display: block; }
+      .dl-card {
+        display: none; /* hide mobile cards on desktop */
       }
-      .delivery-card__actions {
-        justify-content: flex-end;
-        flex-wrap: nowrap;
-        gap: var(--space-3);
-      }
-      .delivery-card__actions .btn {
-        flex: 0 0 auto;
-        min-width: 120px;
-      }
+      .dl-table-wrap { display: block; }
     }
+    .dl-table-wrap { display: none; }
+    @media (min-width: 640px) { .dl-table-wrap { display: block; } }
 
-    /* desktop ≥ 960px */
-    @media (min-width: 960px) {
-      .delivery-card {
-        grid-template-columns: 1fr auto;
-        align-items: start;
-      }
-      .delivery-card.has-actions {
-        grid-template-columns: 1fr auto auto;
-      }
-      .delivery-card__totals { text-align: right; }
-    }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 5px; }
-    .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-    .products-list { background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px; max-height: 400px; overflow-y: auto; }
-    .product-item { background: white; padding: 12px; border-radius: 6px; margin-bottom: 8px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; align-items: center; }
-    .product-item input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%; }
-    .admin-products .product-row { background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-    .admin-products .product-name { flex: 1; font-weight: 500; }
-    .admin-products .product-prices { display: flex; gap: 10px; }
-    .admin-products .product-prices input { width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-    .loading { text-align: center; padding: 40px; color: #7f8c8d; }
-    .detail-summary { background: white; padding: clamp(16px, 2vw, 24px); border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: grid; gap: var(--space-3); }
-    .detail-summary h3 { margin-bottom: 4px; font-size: clamp(18px, 2.4vw, 24px); font-weight: 700; text-transform: lowercase; }
-    .summary-kpis {
+    /* ── KPI cards ─────────────────────────────────────────── */
+    .kpi-row {
       display: grid;
-      gap: var(--space-3);
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
     }
-    .summary-kpis .kpi { padding: var(--space-2); background: #f7f9fb; border-radius: 10px; }
-    .summary-kpis .kpi .val { color: #2c3e50; }
-    @media (min-width: 640px) {
-      .summary-kpis { grid-template-columns: repeat(var(--kpi-columns, 3), minmax(0, 1fr)); }
+    .kpi-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
     }
-    .delivery-payment { display: flex; flex-direction: column; gap: var(--space-2); }
-    .delivery-payment__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-    .delivery-payment__actions button { min-height: 44px; }
-    @media (min-width: 640px) {
-      .delivery-payment { flex-direction: row; justify-content: space-between; align-items: center; }
-      .delivery-payment__actions { justify-content: flex-end; }
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--sub);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
     }
-    .payment-status { font-weight: 600; text-transform: capitalize; }
-    .payment-status.paid { color: #2e7d32; }
-    .payment-status.unpaid { color: #d32f2f; }
-    .product-detail-item { background: white; padding: clamp(12px, 2vw, 18px); border-radius: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    .product-detail-item h4 { font-size: clamp(16px, 2.2vw, 18px); margin-bottom: var(--space-1); }
-    .product-row { display: grid; gap: var(--space-2); grid-template-columns: 1fr; }
-    .product-row__meta { display: flex; flex-wrap: wrap; gap: var(--space-1); color: #7f8c8d; font-size: 13px; }
-    .product-row__label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: #7f8c8d; }
-    .product-row__quantity { display: flex; flex-direction: column; gap: var(--space-1); font-size: 13px; color: #7f8c8d; }
-    .product-row__quantity input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 100%; min-height: 40px; }
-    .product-row__totals { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #7f8c8d; }
-    .product-row__totals strong { font-size: clamp(15px, 2vw, 17px); color: #2c3e50; }
-    @media (min-width: 720px) {
-      .product-row[data-columns="4"] { grid-template-columns: 2fr 1fr 1fr 1fr; }
-      .product-row[data-columns="3"] { grid-template-columns: 2fr 1fr 1fr; }
-      .product-row[data-columns="2"] { grid-template-columns: 2fr 1fr; }
-      .product-row__quantity { align-items: flex-start; }
-      .product-row__totals { align-items: flex-start; }
+    .kpi-value {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.3px;
     }
-    .info-note { background: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
+    .kpi-value.green { color: var(--green); }
+    .kpi-value.muted { color: var(--sub); }
+
+    /* ── Detail summary card ─────────────────────────────────── */
+    .summary-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .summary-card h3 { margin-bottom: 12px; }
+    .payment-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 12px;
+    }
+    .payment-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--sub);
+    }
+    .payment-status-paid   { color: var(--green); font-weight: 600; }
+    .payment-status-unpaid { color: var(--red);   font-weight: 600; }
+    .meta-text { font-size: 11px; color: var(--sub); margin-top: 4px; }
+
+    /* ── Products form (new delivery) ───────────────────────── */
+    .products-form {
+      margin-bottom: 16px;
+    }
+    .products-form .data-table {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+    }
+
+    /* ── Login page ───────────────────────────────────────���─── */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: var(--bg);
+    }
+    .login-box {
+      width: 100%;
+      max-width: 360px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    .login-top {
+      padding: 32px 28px 24px;
+      border-left: 3px solid var(--orange);
+    }
+    .login-top h1 { font-size: 26px; letter-spacing: -0.5px; }
+    .login-top h1 span { color: var(--orange); }
+    .login-top p { font-size: 12px; color: var(--sub); margin-top: 4px; }
+    .login-body { padding: 0 28px 28px; }
+    .role-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+    .role-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .role-btn:hover { border-color: var(--orange); background: var(--orange-l); }
+    .role-btn-sub { font-size: 11px; color: var(--sub); font-weight: 400; }
+    .role-arrow { color: var(--gray-m); font-size: 16px; }
+    .password-panel { padding-top: 4px; }
+    .password-panel .form-control { margin-bottom: 10px; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--sub);
+      cursor: pointer;
+      margin-top: 10px;
+      background: none;
+      border: none;
+      font-family: var(--font);
+      padding: 0;
+    }
+    .back-link:hover { color: var(--text); }
+
+    /* ── Section header inside pages ────────────────────────── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--sub);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      margin-top: 10px;
+    }
+
+    /* ── Admin page ─────────────────────────────────────────── */
+    .admin-nav { display: flex; gap: 8px; margin-bottom: 20px; }
+
+    /* ── Info / warning notes ────────────────────────────────── */
+    .info-note {
+      background: var(--orange-l);
+      border: 1px solid var(--beige);
+      color: var(--gray);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Utility ─────────────────────────────────────────────── */
+    .loading { padding: 40px; text-align: center; color: var(--sub); font-size: 13px; }
+    .empty   { padding: 48px 20px; text-align: center; color: var(--sub); font-size: 13px; }
+    .d-flex  { display: flex; }
+    .gap-8   { gap: 8px; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .mt-4  { margin-top: 4px; }
+    .mt-8  { margin-top: 8px; }
+    .mt-12 { margin-top: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .mb-4  { margin-bottom: 4px; }
+    .mb-8  { margin-bottom: 8px; }
+    .mb-12 { margin-bottom: 12px; }
   </style>
 </head>
 <body>
-  <header id="header" style="display: none;">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header id="header" style="display:none">
     <div class="container">
-      <div class="logo">sative kitchen</div>
-      <div class="user-info">
+      <div class="d-flex items-center gap-8" style="height:100%">
+        <div class="logo">sative <span>kitchen</span></div>
+        <nav class="nav-tabs" id="navTabs"></nav>
+      </div>
+      <div class="header-right">
         <span class="role-badge" id="roleDisplay"></span>
-        <button class="secondary" onclick="logout()">logout</button>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">log out</button>
       </div>
     </div>
   </header>
 
-  <div class="container">
-    <!-- Login Page -->
-    <div data-page="login">
-      <div class="login-container">
-        <h1>sative kitchen</h1>
-        <p>select your role</p>
-        
-        <div id="roleButtons" style="display: grid; gap: 15px;">
-          <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('executor')">executor</button>
-          <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('manager')">manager</button>
-          <button class="primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="selectRole('admin')">admin</button>
+  <!-- ── Pages ───────────────────────────────────────────────── -->
+
+  <!-- Login -->
+  <div data-page="login">
+    <div class="login-wrap">
+      <div class="login-box">
+        <div class="login-top">
+          <h1>sative <span>kitchen</span></h1>
+          <p>delivery management</p>
         </div>
-        
-        <div id="passwordPanel" style="display: none; margin-top: 30px;">
-          <h3 id="selectedRoleName" style="font-size: 18px; margin-bottom: 15px; text-align: center;"></h3>
-          <input type="password" id="rolePassword" placeholder="enter password" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 14px;">
-          <button class="primary" onclick="loginWithPassword()" style="width: 100%;">login</button>
-          <button class="secondary" onclick="backToRoles()" style="width: 100%; margin-top: 10px;">← back</button>
+        <div class="login-body">
+          <div id="roleButtons">
+            <p class="form-label" style="margin-bottom:10px">select your role</p>
+            <div class="role-list">
+              <button class="role-btn" onclick="selectRole('executor')">
+                <span>
+                  <span style="display:block">executor</span>
+                  <span class="role-btn-sub">field team</span>
+                </span>
+                <span class="role-arrow">→</span>
+              </button>
+              <button class="role-btn" onclick="selectRole('manager')">
+                <span>
+                  <span style="display:block">manager</span>
+                  <span class="role-btn-sub">read-only access</span>
+                </span>
+                <span class="role-arrow">→</span>
+              </button>
+              <button class="role-btn" onclick="selectRole('admin')">
+                <span>
+                  <span style="display:block">admin</span>
+                  <span class="role-btn-sub">full access</span>
+                </span>
+                <span class="role-arrow">→</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="passwordPanel" style="display:none" class="password-panel">
+            <p class="form-label" style="margin-bottom:6px" id="selectedRoleName"></p>
+            <input type="password" id="rolePassword" class="form-control"
+              placeholder="enter password"
+              onkeydown="if(event.key==='Enter') loginWithPassword()">
+            <button class="btn btn-primary btn-full btn-lg mt-8" onclick="loginWithPassword()">log in</button>
+            <button class="back-link" onclick="backToRoles()">← back to roles</button>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Home Page -->
-    <div data-page="home">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1>deliveries</h1>
-        <button onclick="showNewDelivery()" id="newBtn">+ new delivery</button>
-      </div>
-      <div id="deliveriesList" class="loading">loading...</div>
-    </div>
-
-    <!-- New Delivery Page -->
-    <div data-page="new-delivery">
-      <h1>create delivery</h1>
-      <button onclick="showPage('home')" class="secondary" style="margin-bottom: 20px;">← back</button>
-      <div class="form-group">
-        <label>date:</label>
-        <input type="date" id="deliveryDate">
-      </div>
-      <h3 style="margin: 20px 0 10px;">products:</h3>
-      <div id="productsForm" class="products-list"></div>
-      <button onclick="saveDelivery()" style="width: 100%; margin-top: 20px;">save delivery</button>
-    </div>
-
-    <!-- Admin Page -->
-    <div data-page="admin">
-      <h1>admin panel</h1>
-      <div style="display: flex; gap: 15px; margin: 30px 0;">
-        <button onclick="showPage('admin-products')">manage products</button>
-        <button class="secondary" onclick="showPage('admin-log')">audit log</button>
-      </div>
-    </div>
-
-    <!-- Admin Products -->
-    <div data-page="admin-products">
-      <h1>manage products</h1>
-      <button onclick="showPage('admin')" class="secondary" style="margin-bottom: 20px;">← back</button>
-      <div id="adminProductsList" class="admin-products"></div>
-    </div>
-
-    <!-- Admin Log -->
-    <div data-page="admin-log">
-      <h1>audit log</h1>
-      <button onclick="showPage('admin')" class="secondary" style="margin-bottom: 20px;">← back</button>
-      <div id="auditLogList"></div>
-    </div>
-
-    <!-- Delivery Detail Page -->
-    <div data-page="delivery-detail">
-      <button onclick="showPage('home')" class="secondary" style="margin-bottom: 20px;">← back</button>
-      <h1 id="deliveryDetailTitle">delivery details</h1>
-      
-      <div id="deliveryDetailSummary"></div>
-      <h3 style="margin: 20px 0 10px;">products:</h3>
-      <div id="deliveryEditNotice" class="info-note" style="display: none;"></div>
-      <div id="deliveryDetailProducts"></div>
-
-      <button onclick="saveDeliveryChanges()" id="saveChangesBtn" style="width: 100%; margin-top: 20px; display: none;">save changes</button>
     </div>
   </div>
 
+  <!-- Home -->
+  <div data-page="home">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>deliveries</h1>
+          <div class="page-sub" id="homeSubtitle"></div>
+        </div>
+        <button class="btn btn-primary" onclick="showNewDelivery()" id="newBtn">+ new delivery</button>
+      </div>
+      <div id="deliveriesList" class="loading">loading…</div>
+    </div>
+  </div>
+
+  <!-- New Delivery -->
+  <div data-page="new-delivery">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <button class="btn btn-ghost btn-sm mb-8" onclick="showPage('home')">← back</button>
+          <h1>new delivery</h1>
+        </div>
+      </div>
+      <div class="form-group" style="max-width:200px; padding-left:8px; padding-right:8px">
+        <label class="form-label">date</label>
+        <input type="date" id="deliveryDate" class="form-control">
+      </div>
+      <div class="section-label">products — enter quantities</div>
+      <div id="productsForm" class="products-form loading">loading products…</div>
+      <div style="padding:0 8px">
+        <button class="btn btn-primary btn-lg btn-full mt-16" onclick="saveDelivery()">create delivery</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delivery Detail -->
+  <div data-page="delivery-detail">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <button class="btn btn-ghost btn-sm mb-8" onclick="showPage('home')">← back</button>
+          <h1 id="deliveryDetailTitle">delivery</h1>
+        </div>
+      </div>
+      <div id="deliveryDetailSummary"></div>
+      <div id="deliveryEditNotice" class="info-note" style="display:none"></div>
+      <div class="section-label">products</div>
+      <div id="deliveryDetailProducts"></div>
+      <div style="padding:0 8px">
+        <button class="btn btn-primary btn-lg btn-full mt-16" id="saveChangesBtn" onclick="saveDeliveryChanges()" style="display:none">save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin -->
+  <div data-page="admin">
+    <div class="container">
+      <div class="page-header">
+        <h1>admin</h1>
+      </div>
+      <div class="admin-nav">
+        <button class="btn btn-primary" onclick="showPage('admin-products')">manage products</button>
+        <button class="btn btn-ghost" onclick="showPage('admin-log')">audit log</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Products -->
+  <div data-page="admin-products">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <button class="btn btn-ghost btn-sm mb-8" onclick="showPage('admin')">← back</button>
+          <h1>manage products</h1>
+        </div>
+      </div>
+      <div id="adminProductsList" class="loading">loading…</div>
+    </div>
+  </div>
+
+  <!-- Admin Log -->
+  <div data-page="admin-log">
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <button class="btn btn-ghost btn-sm mb-8" onclick="showPage('admin')">← back</button>
+          <h1>audit log</h1>
+        </div>
+      </div>
+      <div id="auditLogList" class="loading">loading…</div>
+    </div>
+  </div>
+
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav" id="bottomNav" style="display:none">
+    <button class="bottom-nav-item" id="bnDeliveries" onclick="showPage('home'); loadDeliveries()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M3 8h14"/><path d="M7 12h2M11 12h2"/></svg>
+      deliveries
+    </button>
+    <button class="bottom-nav-item" id="bnNew" onclick="showNewDelivery()" style="display:none">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path d="M10 7v6M7 10h6"/></svg>
+      new
+    </button>
+    <button class="bottom-nav-item" id="bnProfile" onclick="void(0)">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+      profile
+    </button>
+  </nav>
+
   <script>
-    // ============================================================================
+    // ============================================================
     // CONFIGURATION & STATE
-    // ============================================================================
-    
-    // Authentication credentials (change these in production)
+    // ============================================================
     const AUTH = { executor: '1234', manager: '5678', admin: '9999' };
-    
-    // Application state
-    let currentUser = null;
-    let currentRole = null;
-    let allProducts = [];
-    let allDeliveries = [];
+
+    let currentUser     = null;
+    let currentRole     = null;
+    let allProducts     = [];
+    let allDeliveries   = [];
     let currentDeliveryId = null;
     let currentDelivery = null;
-    let hasChanges = false;
-    let selectedRole = null;
+    let hasChanges      = false;
+    let selectedRole    = null;
 
-    // ============================================================================
-    // DATE FORMATTING (Asia/Tbilisi timezone)
-    // ============================================================================
-    
+    // ============================================================
+    // DATE FORMATTING (Asia/Tbilisi)
+    // ============================================================
     const TBILISI_TIMEZONE = 'Asia/Tbilisi';
-
-    // Date formatter for date-only fields (yyyy-MM-dd)
     const dateOnlyFormatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: TBILISI_TIMEZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
+      timeZone: TBILISI_TIMEZONE, year:'numeric', month:'2-digit', day:'2-digit'
     });
-
-    // DateTime formatter for ISO timestamps (created_at, updated_at)
+    const dateDisplayFormatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: TBILISI_TIMEZONE, day:'2-digit', month:'short', year:'numeric'
+    });
     const dateTimeFormatter = new Intl.DateTimeFormat('en-GB', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      timeZone: TBILISI_TIMEZONE
+      dateStyle:'medium', timeStyle:'short', timeZone: TBILISI_TIMEZONE
     });
 
-    /**
-     * Format a date value (handles yyyy-MM-dd strings or ISO timestamps)
-     * Returns formatted date string in yyyy-MM-dd format
-     */
     function formatDate(value) {
       if (!value) return 'No date';
-      
       try {
-        // If already in yyyy-MM-dd format, parse and format to ensure consistency
         if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
-          return value.trim();
+          const [y,m,d] = value.trim().split('-');
+          return dateDisplayFormatter.format(new Date(+y, +m-1, +d));
         }
-        
-        // Parse ISO string or any date format
         const date = new Date(value);
         if (isNaN(date.getTime())) return 'Invalid date';
-        
-        return dateOnlyFormatter.format(date);
-      } catch (e) {
-        return 'Invalid date';
-      }
+        return dateDisplayFormatter.format(date);
+      } catch(e) { return 'Invalid date'; }
     }
 
-    /**
-     * Format ISO datetime string to localized date + time
-     * For created_at, updated_at fields that include time component
-     */
     function formatDateTime(value) {
       if (!value) return '';
-      
       try {
         const date = new Date(value);
         if (isNaN(date.getTime())) return '';
-        
         return dateTimeFormatter.format(date);
-      } catch (e) {
-        return '';
-      }
+      } catch(e) { return ''; }
     }
 
-    /**
-     * Normalize date for form input (yyyy-MM-dd format)
-     */
     function normalizeDeliveryDate(value) {
       if (!value) return '';
-      
       try {
-        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
-          return value.trim();
-        }
-        
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) return value.trim();
         const date = new Date(value);
         if (isNaN(date.getTime())) return '';
-        
         return dateOnlyFormatter.format(date);
-      } catch (e) {
-        return '';
-      }
+      } catch(e) { return ''; }
     }
 
-    // ============================================================================
-    // UTILITY FUNCTIONS
-    // ============================================================================
-    
-    /**
-     * Role-based visibility helpers
-     */
-    function getCurrentRole() {
-      return sessionStorage.getItem('userRole') || currentRole || 'executor';
+    // ============================================================
+    // UTILITIES
+    // ============================================================
+    function getCurrentRole() { return sessionStorage.getItem('userRole') || currentRole || 'executor'; }
+    function canSeeCost()   { const r=getCurrentRole(); return r==='admin'||r==='executor'; }
+    function canSeeMargin() { const r=getCurrentRole(); return r==='admin'||r==='executor'; }
+    function normalizePaymentStatus(v) {
+      if (v===null||v===undefined) return 'unpaid';
+      return String(v).trim().toLowerCase()==='paid'?'paid':'unpaid';
     }
-    
-    function canSeeCost() {
-      const role = getCurrentRole();
-      return role === 'admin' || role === 'executor';
-    }
-    
-    function canSeeMargin() {
-      const role = getCurrentRole();
-      return role === 'admin' || role === 'executor';
-    }
-    
-    /**
-     * Normalize payment status to 'paid' or 'unpaid'
-     */
-    function normalizePaymentStatus(value) {
-      if (value === null || value === undefined) {
-        return 'unpaid';
-      }
-
-      const normalized = String(value).trim().toLowerCase();
-      return normalized === 'paid' ? 'paid' : 'unpaid';
-    }
-
-    /**
-     * Round number to 2 decimal places
-     */
-    const round2 = value => Math.round((Number(value) || 0) * 100) / 100;
-
-    /**
-     * Safely convert value to number, returning 0 if invalid
-     */
-    const ensureNumber = value => {
-      const number = Number(value);
-      return Number.isFinite(number) ? number : 0;
-    };
-
-    /**
-     * Format quantity (integer or decimal)
-     */
-    function formatQuantity(value) {
-      const number = Number(value) || 0;
-      return Number.isInteger(number) ? number.toString() : number.toFixed(2);
-    }
-
-    /**
-     * Format currency value with GEL symbol
-     */
-    function formatCurrency(value, digits = 2) {
-      const number = Number(value) || 0;
-      return number.toFixed(digits);
-    }
-
-    /**
-     * Robust money formatter that handles strings with spaces/commas
-     * @param {*} v - Value to format (can be string or number)
-     * @returns {string} - Formatted string with ₾ symbol
-     */
+    const round2 = v => Math.round((Number(v)||0)*100)/100;
+    const ensureNumber = v => { const n=Number(v); return Number.isFinite(n)?n:0; };
+    function formatQuantity(v) { const n=Number(v)||0; return Number.isInteger(n)?n.toString():n.toFixed(2); }
+    function formatCurrency(v, digits=2) { return (Number(v)||0).toFixed(digits); }
     function formatMoney(v) {
-      if (typeof v === 'string') {
-        v = Number(v.replace(/\s/g, '').replace(',', '.'));
-      }
-      v = Number(v);
-      return Number.isFinite(v) ? v.toFixed(2) + '₾' : '0.00₾';
+      if (typeof v==='string') v=Number(v.replace(/\s/g,'').replace(',','.'));
+      v=Number(v);
+      return Number.isFinite(v)?v.toFixed(2)+'₾':'0.00₾';
     }
 
-    // ============================================================================
-    // API LAYER
-    // ============================================================================
-    
-    // Centralized API base URL - change this to point to your backend
+    // ============================================================
+    // API
+    // ============================================================
     const API_BASE_URL = '/api/proxy';
 
-    /**
-     * Generic fetch wrapper with retry logic.
-     * Retries once on network failure before returning error.
-     * 
-     * @param {string} url - The URL to fetch
-     * @param {object} options - Fetch options (method, headers, body, etc.)
-     * @param {number} retries - Number of retries remaining (default: 1)
-     * @returns {Promise<object>} - JSON response or error object
-     */
-    async function apiFetch(url, options = {}, retries = 1) {
+    async function apiFetch(url, options={}, retries=1) {
       try {
-        const response = await fetch(url, options);
-        const result = await response.json();
-        return result;
-      } catch (error) {
-        console.error('API Error:', error);
-        
-        // Retry once on network failure
-        if (retries > 0) {
-          console.log(`Retrying API call (${retries} retries left)...`);
-          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
-          return apiFetch(url, options, retries - 1);
+        const res = await fetch(url, options);
+        return await res.json();
+      } catch(err) {
+        console.error('API Error:', err);
+        if (retries>0) {
+          await new Promise(r=>setTimeout(r,500));
+          return apiFetch(url, options, retries-1);
         }
-        
-        return { success: false, error: error.message };
+        return { success:false, error:err.message };
       }
     }
-
-    /**
-     * GET request with query parameters
-     * 
-     * @param {string} action - API action name
-     * @param {object} params - Query parameters
-     * @returns {Promise<object>} - API response
-     */
-    async function apiCall(action, params = {}) {
+    async function apiCall(action, params={}) {
       const url = new URL(API_BASE_URL, window.location.origin);
       url.searchParams.append('action', action);
-      Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-      
+      Object.keys(params).forEach(k=>url.searchParams.append(k,params[k]));
       return apiFetch(url.toString());
     }
-
-    /**
-     * POST request with JSON body
-     * 
-     * @param {string} action - API action name
-     * @param {object} data - Request body data
-     * @returns {Promise<object>} - API response
-     */
     async function apiPost(action, data) {
       return apiFetch(API_BASE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, data })
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action,data})
       });
     }
 
+    // ============================================================
     // AUTH
+    // ============================================================
     function selectRole(role) {
       selectedRole = role;
       document.getElementById('roleButtons').style.display = 'none';
-      document.getElementById('passwordPanel').style.display = 'block';
+      const panel = document.getElementById('passwordPanel');
+      panel.style.display = 'block';
       document.getElementById('selectedRoleName').textContent = role;
       document.getElementById('rolePassword').value = '';
       document.getElementById('rolePassword').focus();
@@ -526,7 +866,7 @@
 
     function backToRoles() {
       selectedRole = null;
-      document.getElementById('roleButtons').style.display = 'grid';
+      document.getElementById('roleButtons').style.display = 'block';
       document.getElementById('passwordPanel').style.display = 'none';
     }
 
@@ -538,7 +878,8 @@
         sessionStorage.setItem('userRole', selectedRole);
         document.getElementById('header').style.display = 'block';
         document.getElementById('roleDisplay').textContent = selectedRole;
-        
+        document.getElementById('bottomNav').style.display = 'flex';
+        buildNav();
         if (selectedRole === 'admin') {
           showPage('admin');
         } else {
@@ -546,632 +887,550 @@
           loadDeliveries();
         }
       } else {
-        alert('invalid password');
         document.getElementById('rolePassword').value = '';
+        document.getElementById('rolePassword').placeholder = 'wrong password, try again';
+        document.getElementById('rolePassword').focus();
       }
     }
 
     function logout() {
-      currentUser = null;
-      currentRole = null;
+      currentUser = currentRole = null;
       sessionStorage.removeItem('userRole');
       document.getElementById('header').style.display = 'none';
+      document.getElementById('bottomNav').style.display = 'none';
       showPage('login');
     }
 
-    // NAVIGATION
-    function showPage(page) {
-      document.querySelectorAll('[data-page]').forEach(el => el.style.display = 'none');
-      const target = document.querySelector(`[data-page="${page}"]`);
-      if (target) target.style.display = 'block';
-      
-      const newBtn = document.getElementById('newBtn');
-      if (newBtn) newBtn.style.display = currentRole === 'manager' ? 'none' : 'block';
+    // ============================================================
+    // NAV
+    // ============================================================
+    function buildNav() {
+      const tabs = document.getElementById('navTabs');
+      const bnNew = document.getElementById('bnNew');
+      if (!tabs) return;
+      tabs.innerHTML = '';
+
+      const pages = currentRole === 'admin'
+        ? [['admin','admin'],['admin-products','products'],['admin-log','audit log']]
+        : [['home','deliveries'],['new-delivery','new delivery']];
+
+      pages.forEach(([page, label]) => {
+        const btn = document.createElement('button');
+        btn.className = 'nav-tab';
+        btn.textContent = label;
+        btn.dataset.navPage = page;
+        btn.onclick = () => {
+          if (page === 'new-delivery') showNewDelivery();
+          else { showPage(page); if(page==='home') loadDeliveries(); }
+        };
+        tabs.appendChild(btn);
+      });
+
+      // show/hide mobile new btn
+      if (bnNew) bnNew.style.display = currentRole === 'manager' ? 'none' : 'flex';
     }
 
-    // LOAD DELIVERIES
+    function setActiveNav(page) {
+      document.querySelectorAll('.nav-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.navPage === page);
+      });
+      // bottom nav
+      const map = { 'home':'bnDeliveries', 'new-delivery':'bnNew' };
+      document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active'));
+      if (map[page]) {
+        const el = document.getElementById(map[page]);
+        if (el) el.classList.add('active');
+      }
+    }
+
+    // ============================================================
+    // NAVIGATION
+    // ============================================================
+    function showPage(page) {
+      document.querySelectorAll('[data-page]').forEach(el=>el.style.display='none');
+      const target = document.querySelector(`[data-page="${page}"]`);
+      if (target) target.style.display = 'block';
+      setActiveNav(page);
+      const newBtn = document.getElementById('newBtn');
+      if (newBtn) newBtn.style.display = currentRole==='manager'?'none':'';
+    }
+
+    // ============================================================
+    // DELIVERIES LIST
+    // ============================================================
     async function loadDeliveries() {
       const listEl = document.getElementById('deliveriesList');
       if (!listEl) return;
+      listEl.innerHTML = '<div class="loading">loading…</div>';
 
-      listEl.className = 'loading';
-      listEl.innerHTML = '<div class="loading">loading...</div>';
       const result = await apiCall('getDeliveries');
-      
+
       if (!result.success || !result.data || result.data.length === 0) {
-        listEl.className = '';
-        listEl.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">no deliveries yet</p>';
+        listEl.innerHTML = '<div class="empty">no deliveries yet</div>';
+        // update subtitle
+        document.getElementById('homeSubtitle').textContent = '';
         return;
       }
 
-      const deliveries = result.data.map(delivery => {
-        // Helper to safely parse numeric values (handles strings with commas, spaces, etc)
-        const parseNumeric = (value) => {
-          if (value === null || value === undefined || value === '') return 0;
-          if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-          if (typeof value === 'string') {
-            // Remove spaces and replace comma with dot
-            const cleaned = value.replace(/\s/g, '').replace(',', '.');
-            const parsed = Number(cleaned);
-            return Number.isFinite(parsed) ? parsed : 0;
-          }
-          return 0;
-        };
-        
-        // Calculate from items if total fields are missing or zero
-        let totalCost = parseNumeric(delivery.total_cost ?? delivery.cost_price);
-        let totalSell = parseNumeric(delivery.total_sell ?? delivery.sell_price);
-        let margin = parseNumeric(delivery.margin);
-        
-        // If backend didn't provide totals and we have items, calculate them
-        if (totalCost === 0 && delivery.items && Array.isArray(delivery.items) && delivery.items.length > 0) {
-          totalCost = delivery.items.reduce((sum, item) => {
-            const qty = parseNumeric(item.quantity);
-            const cost = parseNumeric(item.cost_price);
-            return sum + (qty * cost);
-          }, 0);
-          
-          totalSell = delivery.items.reduce((sum, item) => {
-            const qty = parseNumeric(item.quantity);
-            const sell = parseNumeric(item.sell_price);
-            return sum + (qty * sell);
-          }, 0);
-          
+      const parseNum = v => {
+        if (v===null||v===undefined||v==='') return 0;
+        if (typeof v==='number') return Number.isFinite(v)?v:0;
+        const c = String(v).replace(/\s/g,'').replace(',','.');
+        const p = Number(c);
+        return Number.isFinite(p)?p:0;
+      };
+
+      const deliveries = result.data.map(d => {
+        let totalCost = parseNum(d.total_cost ?? d.cost_price);
+        let totalSell = parseNum(d.total_sell ?? d.sell_price);
+        let margin    = parseNum(d.margin);
+        if (totalCost===0 && d.items?.length) {
+          totalCost = d.items.reduce((s,it)=>s+parseNum(it.quantity)*parseNum(it.cost_price),0);
+          totalSell = d.items.reduce((s,it)=>s+parseNum(it.quantity)*parseNum(it.sell_price),0);
           margin = totalSell - totalCost;
         }
-        
-        return {
-          ...delivery,
-          date: normalizeDeliveryDate(delivery.date),
-          payment_status: normalizePaymentStatus(delivery.payment_status),
-          total_cost: totalCost,
-          total_sell: totalSell,
-          margin: margin
-        };
+        return { ...d, date:normalizeDeliveryDate(d.date), payment_status:normalizePaymentStatus(d.payment_status), total_cost:totalCost, total_sell:totalSell, margin };
       });
 
       allDeliveries = deliveries;
 
-      // Sort deliveries by created_at (or date) descending, not by ID
-      const sortedDeliveries = deliveries.slice().sort((a, b) => {
-        const dateA = a.created_at || a.date || '';
-        const dateB = b.created_at || b.date || '';
-        return dateB.localeCompare(dateA);
+      const sorted = [...deliveries].sort((a,b)=>{
+        const da = a.created_at||a.date||'';
+        const db = b.created_at||b.date||'';
+        return db.localeCompare(da);
       });
 
-      const html = sortedDeliveries.map(d => {
-        const deliveryDate = formatDate(d.date);
-        const paymentStatus = normalizePaymentStatus(d.payment_status);
-        const isPaid = paymentStatus === 'paid';
-        const role = getCurrentRole();
-        const showPaymentControls = role === 'executor' || role === 'manager';
-        const canDelete = role === 'executor';
-        const hasActions = showPaymentControls || canDelete;
+      document.getElementById('homeSubtitle').textContent = `${sorted.length} record${sorted.length!==1?'s':''}`;
 
-        const sellPrice = round2(d.total_sell || 0);
+      const role = getCurrentRole();
+      const showPayCtrl = role==='executor'||role==='manager';
+      const canDelete   = role==='executor';
+      const showCost    = canSeeCost();
+      const showMargin  = canSeeMargin();
 
+      // ── Mobile cards ──────────────────────────────────────────
+      const mobileHTML = sorted.map(d => {
+        const isPaid = normalizePaymentStatus(d.payment_status)==='paid';
+        const sell   = round2(d.total_sell||0);
         return `
-        <article class="delivery-card${hasActions ? ' has-actions' : ''}">
-          <div class="delivery-card__row delivery-card__header">
-            <a class="delivery-date" onclick="viewDelivery('${d.id}')">${deliveryDate}</a>
-            <div class="payment-line${isPaid ? '' : ' unpaid'}">Payment: ${isPaid ? 'Paid' : 'Unpaid'}</div>
-          </div>
-          <div class="delivery-card__totals">
-            <div class="kpi">
-              <span class="label">SELL PRICE</span>
-              <span class="val">${formatMoney(sellPrice)}</span>
-            </div>
-          </div>
-          ${hasActions ? `
-            <div class="delivery-card__actions">
-              ${showPaymentControls ? `
-                <button class="btn btn-paid" onclick="event.stopPropagation(); markDeliveryPaid('${d.id}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
-                <button class="btn btn-unpaid" onclick="event.stopPropagation(); markDeliveryUnpaid('${d.id}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
-              ` : ''}
-              ${canDelete ? `
-                <button class="btn btn-delete" onclick="event.stopPropagation(); deleteDelivery('${d.id}')">delete</button>
-              ` : ''}
-            </div>
-          ` : ''}
-        </article>
-      `;
+  <div class="dl-card ${isPaid?'is-paid':'is-unpaid'}">
+  <div class="dl-card-top">
+  <div class="dl-date" onclick="viewDelivery('${d.id}')">${formatDate(d.date)}</div>
+  <div style="text-align:right">
+  <div class="dl-amount">${formatMoney(sell)}</div>
+  <div class="dl-amount-label">sell price</div>
+  </div>
+  </div>
+  <div class="dl-card-bottom">
+  <span class="badge badge-${isPaid?'paid':'unpaid'}">${isPaid?'paid':'unpaid'}</span>
+  <button class="btn btn-ghost btn-sm" onclick="viewDelivery('${d.id}')">view →</button>
+  <div class="dl-actions">
+  ${showPayCtrl ? `
+  <button class="btn btn-sm btn-mark-paid"   onclick="event.stopPropagation();markDeliveryPaid('${d.id}')"   ${isPaid?'disabled':''}>→ paid</button>
+  <button class="btn btn-sm btn-mark-unpaid" onclick="event.stopPropagation();markDeliveryUnpaid('${d.id}')" ${!isPaid?'disabled':''}>→ unpaid</button>
+  ` : ''}
+  ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDelivery('${d.id}')">delete</button>` : ''}
+  </div>
+  </div>
+  </div>`;
       }).join('');
 
-      listEl.className = 'deliveries-list';
-      listEl.innerHTML = html;
+      // ── Desktop table ─────────────────────────────────────────
+      const desktopRows = sorted.map(d => {
+        const isPaid = normalizePaymentStatus(d.payment_status)==='paid';
+        const sell   = round2(d.total_sell||0);
+        const cost   = round2(d.total_cost||0);
+        const margin = round2(d.margin||0);
+        return `
+          <tr>
+            <td><span class="td-name" style="cursor:pointer" onclick="viewDelivery('${d.id}')">${formatDate(d.date)}</span></td>
+            <td><span class="badge badge-${isPaid?'paid':'unpaid'}">${isPaid?'paid':'unpaid'}</span></td>
+            <td class="td-amount">${formatMoney(sell)}</td>
+            ${showCost   ? `<td class="td-muted">${formatMoney(cost)}</td>` : ''}
+            ${showMargin ? `<td class="${margin>=0?'td-green':'td-amount'}">${formatMoney(margin)}</td>` : ''}
+            <td class="td-actions">
+              <div class="d-flex gap-8 flex-wrap" style="justify-content:flex-end">
+                <button class="btn btn-ghost btn-sm" onclick="viewDelivery('${d.id}')">view →</button>
+                ${showPayCtrl ? `
+                  <button class="btn btn-sm btn-mark-paid"   onclick="markDeliveryPaid('${d.id}')"   ${isPaid?'disabled':''}>→ paid</button>
+                  <button class="btn btn-sm btn-mark-unpaid" onclick="markDeliveryUnpaid('${d.id}')" ${!isPaid?'disabled':''}>→ unpaid</button>
+                ` : ''}
+                ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="deleteDelivery('${d.id}')">delete</button>` : ''}
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+
+      listEl.innerHTML = `
+        <div class="delivery-list">${mobileHTML}</div>
+        <div class="dl-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>date</th>
+                <th>status</th>
+                <th>sell ₾</th>
+                ${showCost   ? '<th>cost ₾</th>' : ''}
+                ${showMargin ? '<th>margin ₾</th>' : ''}
+                <th style="text-align:right">actions</th>
+              </tr>
+            </thead>
+            <tbody>${desktopRows}</tbody>
+          </table>
+        </div>`;
     }
 
-    // DELETE DELIVERY
+    // ============================================================
+    // DELETE
+    // ============================================================
     async function deleteDelivery(id) {
       if (!confirm('delete this delivery?')) return;
-
       const result = await apiPost('deleteDelivery', { id });
-
-      if (result.success) {
-        alert('delivery deleted');
-        loadDeliveries();
-      } else {
-        alert('error: ' + (result.error || 'unknown'));
-      }
+      if (result.success) { loadDeliveries(); }
+      else alert('error: ' + (result.error||'unknown'));
     }
 
+    // ============================================================
+    // PAYMENT STATUS
+    // ============================================================
     async function updateDeliveryPaymentStatus(id, status) {
-      const action = status === 'paid' ? 'markDeliveryPaid' : 'markDeliveryUnpaid';
+      const action = status==='paid'?'markDeliveryPaid':'markDeliveryUnpaid';
       const result = await apiPost(action, { id });
-
       if (result.success) {
         if (Array.isArray(allDeliveries)) {
-          const target = allDeliveries.find(d => String(d.id) === String(id));
-          if (target) {
-            target.payment_status = status;
-          }
+          const t = allDeliveries.find(d=>String(d.id)===String(id));
+          if (t) t.payment_status = status;
         }
-
-        if (currentDelivery && String(currentDelivery.id) === String(id)) {
+        if (currentDelivery && String(currentDelivery.id)===String(id)) {
           currentDelivery.payment_status = status;
           renderDeliverySummary();
         }
-
         await loadDeliveries();
-      } else {
-        alert('error: ' + (result.error || 'unknown'));
-      }
+      } else alert('error: ' + (result.error||'unknown'));
     }
+    const markDeliveryPaid   = id => updateDeliveryPaymentStatus(id,'paid');
+    const markDeliveryUnpaid = id => updateDeliveryPaymentStatus(id,'unpaid');
 
-    function markDeliveryPaid(id) {
-      return updateDeliveryPaymentStatus(id, 'paid');
-    }
-
-    function markDeliveryUnpaid(id) {
-      return updateDeliveryPaymentStatus(id, 'unpaid');
-    }
-
-    // VIEW DELIVERY DETAIL
+    // ============================================================
+    // DELIVERY DETAIL
+    // ============================================================
     async function viewDelivery(id) {
       currentDeliveryId = id;
       hasChanges = false;
       showPage('delivery-detail');
-      
-      document.getElementById('deliveryDetailProducts').innerHTML = '<div class="loading">loading...</div>';
-      
-      const result = await apiCall('getDelivery', { id });
-      
-      if (!result.success || !result.data) {
-        alert('error loading delivery');
-        showPage('home');
-        return;
-      }
-      
-      const delivery = result.data;
+      document.getElementById('deliveryDetailProducts').innerHTML = '<div class="loading">loading…</div>';
 
+      const result = await apiCall('getDelivery', { id });
+      if (!result.success || !result.data) { alert('error loading delivery'); showPage('home'); return; }
+
+      const delivery = result.data;
       currentDelivery = {
         ...delivery,
         payment_status: normalizePaymentStatus(delivery.payment_status),
         date: normalizeDeliveryDate(delivery.date),
-        items: (delivery.items || []).map(item => ({
-          ...item,
-          quantity: Number(item.quantity) || 0,
-          cost_price: Number(item.cost_price) || 0,
-          sell_price: Number(item.sell_price) || 0
+        items: (delivery.items||[]).map(it=>({
+          ...it, quantity:Number(it.quantity)||0, cost_price:Number(it.cost_price)||0, sell_price:Number(it.sell_price)||0
         }))
       };
 
-      const cleanDate = formatDate(currentDelivery.date);
-      document.getElementById('deliveryDetailTitle').textContent = `Delivery ${cleanDate}`;
+      document.getElementById('deliveryDetailTitle').textContent = formatDate(currentDelivery.date);
 
       const noticeEl = document.getElementById('deliveryEditNotice');
-      if (noticeEl) {
-        if (currentDelivery.status === 'completed') {
-          noticeEl.textContent = 'editing of submitted deliveries is disabled. create a new delivery if updates are needed';
-          noticeEl.style.display = 'block';
-        } else {
-          noticeEl.textContent = '';
-          noticeEl.style.display = 'none';
-        }
+      if (currentDelivery.status==='completed') {
+        noticeEl.textContent = 'editing of submitted deliveries is disabled';
+        noticeEl.style.display = 'block';
+      } else {
+        noticeEl.style.display = 'none';
       }
 
-      const canEdit = currentRole === 'executor' && currentDelivery.status !== 'completed';
-
+      const canEdit = currentRole==='executor' && currentDelivery.status!=='completed';
       renderDeliverySummary();
       renderDeliveryItems(canEdit);
-      document.getElementById('saveChangesBtn').style.display = canEdit ? 'block' : 'none';
+      document.getElementById('saveChangesBtn').style.display = canEdit?'block':'none';
     }
 
     function renderDeliverySummary() {
       if (!currentDelivery) return;
 
-      const totals = currentDelivery.items.reduce((acc, item) => {
-        const quantity = Number(item.quantity) || 0;
-        const costPrice = Number(item.cost_price) || 0;
-        const sellPrice = Number(item.sell_price) || 0;
-
-        acc.totalCost += quantity * costPrice;
-        acc.totalSell += quantity * sellPrice;
+      const totals = currentDelivery.items.reduce((acc,it)=>{
+        acc.totalCost += (Number(it.quantity)||0)*(Number(it.cost_price)||0);
+        acc.totalSell += (Number(it.quantity)||0)*(Number(it.sell_price)||0);
         return acc;
-      }, { totalCost: 0, totalSell: 0 });
-
+      }, {totalCost:0,totalSell:0});
       totals.totalCost = round2(totals.totalCost);
       totals.totalSell = round2(totals.totalSell);
       const margin = round2(totals.totalSell - totals.totalCost);
-      const paymentStatus = normalizePaymentStatus(currentDelivery.payment_status);
-      const isPaid = paymentStatus === 'paid';
-      const role = getCurrentRole();
-      const showPaymentControls = role === 'executor' || role === 'manager';
-      const showCost = canSeeCost();
-      const showMargin = canSeeMargin();
+      const isPaid = normalizePaymentStatus(currentDelivery.payment_status)==='paid';
+      const role   = getCurrentRole();
+      const showPayCtrl = role==='executor'||role==='manager';
+      const showCost    = canSeeCost();
+      const showMargin  = canSeeMargin();
+      const createdAt   = formatDateTime(currentDelivery.created_at);
+      const updatedAt   = formatDateTime(currentDelivery.updated_at);
 
-      const createdAt = formatDateTime(currentDelivery.created_at);
-      const updatedAt = formatDateTime(currentDelivery.updated_at);
-      const createdBy = currentDelivery.created_by || '';
-      const updatedBy = currentDelivery.updated_by || '';
-      
-      const kpis = [];
-      if (showCost) {
-        kpis.push(`
-          <div class="kpi">
-            <span class="label">COST PRICE</span>
-            <span class="val">${formatCurrency(totals.totalCost)}₾</span>
-          </div>
-        `);
-      }
-      kpis.push(`
-        <div class="kpi">
-          <span class="label">SELL PRICE</span>
-          <span class="val">${formatCurrency(totals.totalSell)}₾</span>
-        </div>
-      `);
-      if (showMargin) {
-        kpis.push(`
-          <div class="kpi">
-            <span class="label">MARGIN</span>
-            <span class="val">${formatCurrency(margin)}₾</span>
-          </div>
-        `);
-      }
-
-      const kpiCount = Math.max(1, kpis.length);
+      let kpiHTML = '';
+      if (showCost)   kpiHTML += `<div class="kpi-card"><div class="kpi-label">cost</div><div class="kpi-value muted">${formatCurrency(totals.totalCost)}₾</div></div>`;
+      kpiHTML += `<div class="kpi-card"><div class="kpi-label">sell</div><div class="kpi-value">${formatCurrency(totals.totalSell)}₾</div></div>`;
+      if (showMargin) kpiHTML += `<div class="kpi-card"><div class="kpi-label">margin</div><div class="kpi-value green">${formatCurrency(margin)}₾</div></div>`;
 
       document.getElementById('deliveryDetailSummary').innerHTML = `
-        <section class="detail-summary">
-          <h3>summary</h3>
-          <div class="summary-kpis" style="--kpi-columns: ${kpiCount};">
-            ${kpis.join('')}
+        <div class="summary-card">
+          <div class="kpi-row">${kpiHTML}</div>
+          ${createdAt ? `<div class="meta-text">created ${createdAt}${currentDelivery.created_by?' by '+currentDelivery.created_by:''}</div>` : ''}
+          ${updatedAt ? `<div class="meta-text">updated ${updatedAt}${currentDelivery.updated_by?' by '+currentDelivery.updated_by:''}</div>` : ''}
+          <div class="payment-row">
+            <span class="payment-label">payment: <strong class="payment-status-${isPaid?'paid':'unpaid'}">${isPaid?'paid':'unpaid'}</strong></span>
+            ${showPayCtrl ? `
+              <div class="d-flex gap-8">
+                <button class="btn btn-sm btn-mark-paid"   onclick="markDeliveryPaid('${currentDeliveryId}')"   ${isPaid?'disabled':''}>→ paid</button>
+                <button class="btn btn-sm btn-mark-unpaid" onclick="markDeliveryUnpaid('${currentDeliveryId}')" ${!isPaid?'disabled':''}>→ unpaid</button>
+              </div>` : ''}
           </div>
-          ${createdAt ? `
-            <div style="font-size: 13px; color: #7f8c8d;">
-              <div>Created: ${createdAt}${createdBy ? ` by ${createdBy}` : ''}</div>
-              ${updatedAt ? `<div style="margin-top: 4px;">Updated: ${updatedAt}${updatedBy ? ` by ${updatedBy}` : ''}</div>` : ''}
-            </div>
-          ` : ''}
-          <div class="delivery-payment">
-            <span class="payment-status ${isPaid ? 'paid' : 'unpaid'}">payment: ${paymentStatus}</span>
-            ${showPaymentControls ? `
-              <div class="delivery-payment__actions">
-                <button class="edit-btn" onclick="markDeliveryPaid('${currentDeliveryId}')" ${isPaid ? 'disabled' : ''}>mark as paid</button>
-                <button class="danger" onclick="markDeliveryUnpaid('${currentDeliveryId}')" ${!isPaid ? 'disabled' : ''}>mark as unpaid</button>
-              </div>
-            ` : ''}
-          </div>
-        </section>
-      `;
+        </div>`;
     }
 
     function renderDeliveryItems(canEdit) {
       if (!currentDelivery) return;
-      
       const showCost = canSeeCost();
 
-      const html = currentDelivery.items.map((item, index) => {
-        const quantity = Number(item.quantity) || 0;
-        const costPrice = Number(item.cost_price) || 0;
-        const sellPrice = Number(item.sell_price) || 0;
-        const totalCost = round2(quantity * costPrice);
-        const totalSell = round2(quantity * sellPrice);
-
-        const columnCount = showCost ? 4 : 3;
-
+      const rows = currentDelivery.items.map((it, idx) => {
+        const qty       = Number(it.quantity)||0;
+        const costPrice = Number(it.cost_price)||0;
+        const sellPrice = Number(it.sell_price)||0;
+        const totalCost = round2(qty*costPrice);
+        const totalSell = round2(qty*sellPrice);
         return `
-          <div class="product-detail-item" data-index="${index}">
-            <div class="product-row" data-columns="${columnCount}">
-              <div>
-                <h4>${item.product_name}</h4>
-                <div class="product-row__meta">
-                  <span>${item.unit}</span>
-                  ${showCost ? `<span>cost/unit: ${formatCurrency(costPrice, 1)}₾</span>` : ''}
-                  <span>sell/unit: ${formatCurrency(sellPrice, 1)}₾</span>
-                </div>
-              </div>
-              <div class="product-row__quantity">
-                <span class="product-row__label">Quantity</span>
-                ${canEdit ? `
-                  <input type="number" step="0.5" min="0" value="${quantity}" data-index="${index}" oninput="updateDeliveryQuantity(${index}, this.value)" onchange="updateDeliveryQuantity(${index}, this.value)">
-                ` : `
-                  <strong data-quantity-display="${index}">${formatQuantity(quantity)}</strong>
-                `}
-              </div>
-              ${showCost ? `
-                <div class="product-row__totals">
-                  <span class="product-row__label">Total cost</span>
-                  <strong data-total-cost="${index}">${formatCurrency(totalCost)}₾</strong>
-                </div>
-              ` : ''}
-              <div class="product-row__totals">
-                <span class="product-row__label">Total sell</span>
-                <strong data-total-sell="${index}">${formatCurrency(totalSell)}₾</strong>
-              </div>
-            </div>
-          </div>
-        `;
+          <tr data-index="${idx}">
+            <td>
+              <div class="td-name">${it.product_name}</div>
+              <div class="td-sub">${it.unit}${showCost?' · cost: '+formatCurrency(costPrice,1)+'₾':''} · sell: ${formatCurrency(sellPrice,1)}₾</div>
+            </td>
+            <td>
+              ${canEdit
+                ? `<input type="number" step="0.5" min="0" value="${qty}" class="qty-input"
+                    data-index="${idx}"
+                    oninput="updateDeliveryQuantity(${idx},this.value)"
+                    onchange="updateDeliveryQuantity(${idx},this.value)">`
+                : `<span data-quantity-display="${idx}">${formatQuantity(qty)}</span>`}
+            </td>
+            ${showCost ? `<td class="td-muted" data-total-cost="${idx}">${formatCurrency(totalCost)}₾</td>` : ''}
+            <td class="td-amount" data-total-sell="${idx}">${formatCurrency(totalSell)}₾</td>
+          </tr>`;
       }).join('');
 
-      document.getElementById('deliveryDetailProducts').innerHTML = html;
+      document.getElementById('deliveryDetailProducts').innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>product</th>
+              <th>qty</th>
+              ${showCost?'<th>total cost</th>':''}
+              <th>total sell</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
     }
 
     function updateDeliveryQuantity(index, value) {
-      if (!currentDelivery || currentDelivery.status === 'completed') return;
-
-      const quantity = value === '' ? 0 : Math.max(0, parseFloat(value) || 0);
-      if (!Number.isFinite(quantity)) return;
-
-      currentDelivery.items[index].quantity = quantity;
+      if (!currentDelivery || currentDelivery.status==='completed') return;
+      const qty = value===''?0:Math.max(0,parseFloat(value)||0);
+      if (!Number.isFinite(qty)) return;
+      currentDelivery.items[index].quantity = qty;
       hasChanges = true;
-
-      const costPrice = Number(currentDelivery.items[index].cost_price) || 0;
-      const sellPrice = Number(currentDelivery.items[index].sell_price) || 0;
-
-      const totalCost = round2(quantity * costPrice);
-      const totalSell = round2(quantity * sellPrice);
-
+      const costPrice = Number(currentDelivery.items[index].cost_price)||0;
+      const sellPrice = Number(currentDelivery.items[index].sell_price)||0;
+      const totalCost = round2(qty*costPrice);
+      const totalSell = round2(qty*sellPrice);
       const costEl = document.querySelector(`[data-total-cost="${index}"]`);
-      if (costEl) costEl.textContent = formatCurrency(totalCost);
-
+      if (costEl) costEl.textContent = formatCurrency(totalCost)+'₾';
       const sellEl = document.querySelector(`[data-total-sell="${index}"]`);
-      if (sellEl) sellEl.textContent = formatCurrency(totalSell);
-
-      const quantityDisplay = document.querySelector(`[data-quantity-display="${index}"]`);
-      if (quantityDisplay) {
-        quantityDisplay.textContent = `quantity: ${formatQuantity(quantity)}`;
-      }
-
+      if (sellEl) sellEl.textContent = formatCurrency(totalSell)+'₾';
       renderDeliverySummary();
     }
 
     async function saveDeliveryChanges() {
-      if (!currentDelivery || currentDelivery.status === 'completed') {
-        return;
-      }
-
-      if (!hasChanges) {
-        alert('no changes to save');
-        return;
-      }
-
-      const items = currentDelivery.items.map(item => ({
-        id: item.id,
-        quantity: Number(item.quantity) || 0
-      }));
-
-      const result = await apiPost('updateDelivery', {
-        id: currentDeliveryId,
-        items
-      });
-
+      if (!currentDelivery || currentDelivery.status==='completed') return;
+      if (!hasChanges) { alert('no changes to save'); return; }
+      const items = currentDelivery.items.map(it=>({ id:it.id, quantity:Number(it.quantity)||0 }));
+      const result = await apiPost('updateDelivery', { id:currentDeliveryId, items });
       if (result.success) {
-        alert('changes saved!');
         hasChanges = false;
         await viewDelivery(currentDeliveryId);
-        if (typeof loadDeliveries === 'function') {
-          loadDeliveries();
-        }
-      } else {
-        alert('error: ' + (result.error || 'unknown'));
-      }
+        loadDeliveries();
+      } else alert('error: '+(result.error||'unknown'));
     }
 
-    // LOAD PRODUCTS FOR FORM
+    // ============================================================
+    // NEW DELIVERY
+    // ============================================================
     async function showNewDelivery() {
       showPage('new-delivery');
       const dateInput = document.getElementById('deliveryDate');
       if (dateInput) {
-        const normalizedValue = normalizeDeliveryDate(dateInput.value);
-        dateInput.value = normalizedValue || normalizeDeliveryDate(new Date());
+        const norm = normalizeDeliveryDate(dateInput.value);
+        dateInput.value = norm || normalizeDeliveryDate(new Date().toISOString());
       }
-      document.getElementById('productsForm').innerHTML = '<div class="loading">loading products...</div>';
-      
+      const formEl = document.getElementById('productsForm');
+      formEl.innerHTML = '<div class="loading">loading products…</div>';
+
       const result = await apiCall('getProducts');
-      
       if (!result.success || !result.data) {
-        document.getElementById('productsForm').innerHTML = '<p>error loading products</p>';
+        formEl.innerHTML = '<div class="empty">error loading products</div>';
         return;
       }
-      
-      allProducts = result.data.filter(p => p.active);
-      
-      const html = allProducts.map(p => `
-        <div class="product-item" data-id="${p.id}">
-          <div><strong>${p.name}</strong><br><small>${p.unit}</small></div>
-          <div>
-            <small>cost</small><br>
-            <span>${(p.cost_price || 0).toFixed(1)}₾</span>
-          </div>
-          <div>
-            <small>sell</small><br>
-            <span>${(p.sell_price || 0).toFixed(1)}₾</span>
-          </div>
-          <input type="number" step="0.5" min="0" value="0" placeholder="qty" data-product="${p.id}">
-        </div>
-      `).join('');
-      
-      document.getElementById('productsForm').innerHTML = html;
+
+      allProducts = result.data.filter(p=>p.active);
+
+      const rows = allProducts.map(p => `
+        <tr data-id="${p.id}">
+          <td>
+            <div class="td-name">${p.name}</div>
+            <div class="td-sub">${p.unit}</div>
+          </td>
+          <td class="td-muted">${(p.sell_price||0).toFixed(2)}₾</td>
+          <td class="td-muted">${(p.cost_price||0).toFixed(2)}₾</td>
+          <td><input type="number" step="0.5" min="0" value="0" placeholder="0" class="qty-input" data-product="${p.id}"></td>
+        </tr>`).join('');
+
+      formEl.innerHTML = `
+        <table class="data-table">
+          <thead><tr><th>product</th><th>sell ₾</th><th>cost ₾</th><th>qty</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
     }
 
-    // SAVE DELIVERY
     async function saveDelivery() {
       const dateInput = document.getElementById('deliveryDate');
-      const rawDate = dateInput ? dateInput.value : '';
-      const date = normalizeDeliveryDate(rawDate);
-
-      if (!date) {
-        alert('select delivery date');
-        return;
-      }
+      const date = normalizeDeliveryDate(dateInput?.value||'');
+      if (!date) { alert('select delivery date'); return; }
 
       const items = [];
-      document.querySelectorAll('.product-item').forEach(row => {
-        const qty = parseFloat(row.querySelector('input').value) || 0;
-        if (qty > 0) {
-          const productId = row.dataset.id;
-          const product = allProducts.find(p => String(p.id) === String(productId));
-          if (product) {
-            items.push({
-              product_id: productId,
-              quantity: qty,
-              cost_price: product.cost_price || 0,
-              sell_price: product.sell_price || 0
-            });
-          }
+      document.querySelectorAll('#productsForm [data-product]').forEach(inp => {
+        const qty = parseFloat(inp.value)||0;
+        if (qty>0) {
+          const product = allProducts.find(p=>String(p.id)===String(inp.dataset.product));
+          if (product) items.push({ product_id:inp.dataset.product, quantity:qty, cost_price:product.cost_price||0, sell_price:product.sell_price||0 });
         }
       });
-      
-      if (items.length === 0) {
-        alert('add at least one product');
-        return;
-      }
-      
-      const result = await apiPost('createDelivery', {
-        date: date,
-        items: items,
-        created_by: currentUser,
-        payment_status: 'unpaid'
-      });
-      
-      if (result.success) {
-        alert('delivery created!');
-        showPage('home');
-        loadDeliveries();
-      } else {
-        alert('error: ' + (result.error || 'unknown'));
-      }
+
+      if (items.length===0) { alert('add at least one product'); return; }
+
+      const result = await apiPost('createDelivery', { date, items, created_by:currentUser, payment_status:'unpaid' });
+      if (result.success) { showPage('home'); loadDeliveries(); }
+      else alert('error: '+(result.error||'unknown'));
     }
 
-    // ADMIN - LOAD PRODUCTS
+    // ============================================================
+    // ADMIN
+    // ============================================================
     async function loadAdminProducts() {
-      document.getElementById('adminProductsList').innerHTML = '<div class="loading">loading...</div>';
+      const el = document.getElementById('adminProductsList');
+      el.innerHTML = '<div class="loading">loading…</div>';
       const result = await apiCall('getProducts');
-      
-      if (!result.success || !result.data) {
-        document.getElementById('adminProductsList').innerHTML = '<p>error loading</p>';
-        return;
-      }
-      
-      const html = result.data.filter(p => p.active).map(p => `
-        <div class="product-row">
-          <div class="product-name">${p.name} (${p.unit})</div>
-          <div class="product-prices">
-            <input type="number" step="0.1" value="${p.cost_price || 0}" 
-                   onchange="updateProductPrice('${p.id}', 'cost_price', this.value)"
-                   placeholder="cost">
-            <input type="number" step="0.1" value="${p.sell_price || 0}"
-                   onchange="updateProductPrice('${p.id}', 'sell_price', this.value)"
-                   placeholder="sell">
-          </div>
-        </div>
-      `).join('');
-      
-      document.getElementById('adminProductsList').innerHTML = html;
+      if (!result.success || !result.data) { el.innerHTML='<div class="empty">error loading</div>'; return; }
+
+      const rows = result.data.filter(p=>p.active).map(p => `
+        <tr>
+          <td><div class="td-name">${p.name}</div><div class="td-sub">${p.unit}</div></td>
+          <td><input type="number" step="0.1" value="${p.cost_price||0}" class="qty-input"
+            onchange="updateProductPrice('${p.id}','cost_price',this.value)" placeholder="cost"></td>
+          <td><input type="number" step="0.1" value="${p.sell_price||0}" class="qty-input"
+            onchange="updateProductPrice('${p.id}','sell_price',this.value)" placeholder="sell"></td>
+          <td><button class="btn btn-primary btn-sm" onclick="saveProductRow('${p.id}',this)">save</button></td>
+        </tr>`).join('');
+
+      el.innerHTML = `
+        <table class="data-table">
+          <thead><tr><th>product</th><th>cost ₾</th><th>sell ₾</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
     }
 
-    // UPDATE PRODUCT
-    async function updateProductPrice(id, field, value) {
+    async function saveProductRow(id, btn) {
+      const row = btn.closest('tr');
+      const inputs = row.querySelectorAll('input[type="number"]');
+      const cost = parseFloat(inputs[0].value)||0;
+      const sell = parseFloat(inputs[1].value)||0;
       const result = await apiCall('getProducts');
       if (!result.success) return;
-      
-      const product = result.data.find(p => String(p.id) === String(id));
+      const product = result.data.find(p=>String(p.id)===String(id));
       if (!product) return;
-      
-      product[field] = parseFloat(value) || 0;
-      
+      product.cost_price = cost;
+      product.sell_price = sell;
       await apiPost('updateProduct', product);
-      alert('price updated');
+      btn.textContent = '✓ saved';
+      setTimeout(()=>{ btn.textContent = 'save'; }, 2000);
     }
 
-    // LOAD AUDIT LOG
+    async function updateProductPrice(id, field, value) {
+      // kept for inline onchange compat; actual save is via saveProductRow
+    }
+
     async function loadAuditLog() {
-      document.getElementById('auditLogList').innerHTML = '<div class="loading">loading...</div>';
+      const el = document.getElementById('auditLogList');
+      el.innerHTML = '<div class="loading">loading…</div>';
       const result = await apiCall('getAuditLog');
-      
-      if (!result.success || !result.data || result.data.length === 0) {
-        document.getElementById('auditLogList').innerHTML = '<p>no logs</p>';
+      if (!result.success || !result.data || result.data.length===0) {
+        el.innerHTML = '<div class="empty">no logs</div>';
         return;
       }
-      
-      const html = result.data.reverse().slice(0, 50).map(log => {
-        const timestamp = formatDateTime(log.timestamp) || log.timestamp;
+      const rows = result.data.slice().reverse().slice(0,50).map(log => {
+        const ts = formatDateTime(log.timestamp)||log.timestamp;
         return `
-          <div style="background: white; padding: 12px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;">
-            <strong>${timestamp}</strong> | ${log.user} | ${log.action} | ${log.entity} #${log.entity_id}
-            <br><small style="color: #7f8c8d;">${log.details}</small>
-          </div>
-        `;
+          <tr>
+            <td class="td-muted" style="font-size:12px;font-variant-numeric:tabular-nums">${ts}</td>
+            <td><span class="badge badge-${log.user==='admin'?'unpaid':'paid'}">${log.user}</span></td>
+            <td class="td-name" style="font-size:12px">${log.action}</td>
+            <td class="td-muted" style="font-size:12px">${log.entity} #${log.entity_id}</td>
+            <td class="td-muted" style="font-size:11px">${log.details}</td>
+          </tr>`;
       }).join('');
-      
-      document.getElementById('auditLogList').innerHTML = html;
+      el.innerHTML = `
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>time</th><th>user</th><th>action</th><th>entity</th><th>details</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
     }
 
+    // ============================================================
     // INIT
+    // ============================================================
     window.addEventListener('DOMContentLoaded', () => {
-      // Auto-login from sessionStorage
       const savedRole = sessionStorage.getItem('userRole');
       if (savedRole && AUTH[savedRole]) {
         currentUser = savedRole;
         currentRole = savedRole;
         document.getElementById('header').style.display = 'block';
         document.getElementById('roleDisplay').textContent = savedRole;
-        
-        if (savedRole === 'admin') {
-          showPage('admin');
-        } else {
-          showPage('home');
-          loadDeliveries();
-        }
+        document.getElementById('bottomNav').style.display = 'flex';
+        buildNav();
+        if (savedRole==='admin') showPage('admin');
+        else { showPage('home'); loadDeliveries(); }
       } else {
         showPage('login');
       }
-      
+
       const dateInput = document.getElementById('deliveryDate');
-      if (dateInput) {
-        const normalizedValue = normalizeDeliveryDate(dateInput.value);
-        dateInput.value = normalizedValue || normalizeDeliveryDate(new Date());
+      if (dateInput && !dateInput.value) {
+        dateInput.value = normalizeDeliveryDate(new Date().toISOString());
       }
-      
-      // Admin page load handlers
+
+      // observe page changes to load admin sub-pages
       const observer = new MutationObserver(() => {
-        const adminProducts = document.querySelector('[data-page="admin-products"]');
-        const adminLog = document.querySelector('[data-page="admin-log"]');
-        
-        if (adminProducts && adminProducts.style.display === 'block' && !adminProducts.dataset.loaded) {
-          adminProducts.dataset.loaded = 'true';
-          loadAdminProducts();
+        const adminP = document.querySelector('[data-page="admin-products"]');
+        const adminL = document.querySelector('[data-page="admin-log"]');
+        if (adminP?.style.display==='block' && !adminP.dataset.loaded) {
+          adminP.dataset.loaded = 'true'; loadAdminProducts();
         }
-        
-        if (adminLog && adminLog.style.display === 'block' && !adminLog.dataset.loaded) {
-          adminLog.dataset.loaded = 'true';
-          loadAuditLog();
+        if (adminL?.style.display==='block' && !adminL.dataset.loaded) {
+          adminL.dataset.loaded = 'true'; loadAuditLog();
         }
       });
-      
-      observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style'] });
+      observer.observe(document.body, { attributes:true, subtree:true, attributeFilter:['style'] });
     });
   </script>
-
-  <!-- Manager Page -->
-  <div data-page="manager">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-      <h1>manager dashboard</h1>
-      <button onclick="showNewDelivery()" id="newBtn">+ new delivery</button>
-    </div>
-    <div id="deliveriesList" class="loading">loading...</div>
-  </div>
-
 </body>
 </html>
