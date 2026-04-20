@@ -364,11 +364,12 @@
     .dl-card-bottom {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      justify-content: flex-start;
+      gap: 6px;
       flex-wrap: wrap;
+      margin-top: 6px;
     }
-    .dl-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .dl-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
 
     /* Desktop: replace cards with table */
     @media (min-width: 640px) {
@@ -996,30 +997,26 @@
         const isPaid = normalizePaymentStatus(d.payment_status)==='paid';
         const sell   = round2(d.total_sell||0);
         return `
-          <div class="dl-card ${isPaid?'is-paid':'is-unpaid'}">
-            <div class="dl-card-top">
-              <div>
-                <div class="dl-date" onclick="viewDelivery('${d.id}')">${formatDate(d.date)}</div>
-                <div style="margin-top:5px">
-                  <span class="badge badge-${isPaid?'paid':'unpaid'}">${isPaid?'paid':'unpaid'}</span>
-                </div>
-              </div>
-              <div style="text-align:right">
-                <div class="dl-amount">${formatMoney(sell)}</div>
-                <div class="dl-amount-label">sell price</div>
-              </div>
-            </div>
-            <div class="dl-card-bottom">
-              <button class="btn btn-ghost btn-sm" onclick="viewDelivery('${d.id}')">view →</button>
-              <div class="dl-actions">
-                ${showPayCtrl ? `
-                  <button class="btn btn-sm btn-mark-paid"   onclick="event.stopPropagation();markDeliveryPaid('${d.id}')"   ${isPaid?'disabled':''}>→ paid</button>
-                  <button class="btn btn-sm btn-mark-unpaid" onclick="event.stopPropagation();markDeliveryUnpaid('${d.id}')" ${!isPaid?'disabled':''}>→ unpaid</button>
-                ` : ''}
-                ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDelivery('${d.id}')">delete</button>` : ''}
-              </div>
-            </div>
-          </div>`;
+  <div class="dl-card ${isPaid?'is-paid':'is-unpaid'}">
+  <div class="dl-card-top">
+  <div class="dl-date" onclick="viewDelivery('${d.id}')">${formatDate(d.date)}</div>
+  <div style="text-align:right">
+  <div class="dl-amount">${formatMoney(sell)}</div>
+  <div class="dl-amount-label">sell price</div>
+  </div>
+  </div>
+  <div class="dl-card-bottom">
+  <span class="badge badge-${isPaid?'paid':'unpaid'}">${isPaid?'paid':'unpaid'}</span>
+  <button class="btn btn-ghost btn-sm" onclick="viewDelivery('${d.id}')">view →</button>
+  <div class="dl-actions">
+  ${showPayCtrl ? `
+  <button class="btn btn-sm btn-mark-paid"   onclick="event.stopPropagation();markDeliveryPaid('${d.id}')"   ${isPaid?'disabled':''}>→ paid</button>
+  <button class="btn btn-sm btn-mark-unpaid" onclick="event.stopPropagation();markDeliveryUnpaid('${d.id}')" ${!isPaid?'disabled':''}>→ unpaid</button>
+  ` : ''}
+  ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDelivery('${d.id}')">delete</button>` : ''}
+  </div>
+  </div>
+  </div>`;
       }).join('');
 
       // ── Desktop table ─────────────────────────────────────────
