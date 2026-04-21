@@ -52,7 +52,7 @@
       overflow-x: hidden;
       padding-bottom: calc(var(--bottom-h) + env(safe-area-inset-bottom, 0));
     }
-    @media (min-width: 640px) { body { padding-bottom: 0; } }
+    @media (min-width: 640px) { body { padding-bottom: 0 !important; } }
 
     /* ── Typography ─────────────────────────────────────────── */
     h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
@@ -182,7 +182,7 @@
     }
     .bottom-nav-item.active { color: var(--orange); background: var(--orange-l); }
     .bottom-nav-item svg { width: 20px; height: 20px; }
-    @media (min-width: 640px) { .bottom-nav { display: none; } }
+    @media (min-width: 640px) { .bottom-nav { display: none !important; } }
 
     /* ── Buttons ─────────────────────────────────────────────── */
     button { font-family: var(--font); cursor: pointer; border: none; transition: all 0.15s; }
