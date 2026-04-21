@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Sative Kitchen</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -50,7 +50,7 @@
       color: var(--text);
       line-height: 1.5;
       overflow-x: hidden;
-      padding-bottom: var(--bottom-h);
+      padding-bottom: calc(var(--bottom-h) + env(safe-area-inset-bottom, 0));
     }
     @media (min-width: 640px) { body { padding-bottom: 0; } }
 
@@ -82,6 +82,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      padding-top: env(safe-area-inset-top, 0);
     }
     #header::before {
       content: '';
@@ -96,6 +97,8 @@
       justify-content: space-between;
       height: var(--nav-h);
       gap: 12px;
+      padding-left: 12px;
+      padding-right: 12px;
     }
     .logo {
       font-size: 15px;
@@ -153,7 +156,8 @@
     .bottom-nav {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      height: var(--bottom-h);
+      height: calc(var(--bottom-h) + env(safe-area-inset-bottom, 0));
+      padding-bottom: env(safe-area-inset-bottom, 0);
       background: var(--white);
       border-top: 1px solid var(--border);
       display: flex;
