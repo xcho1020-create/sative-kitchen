@@ -47,14 +47,14 @@ begin
     delete from kitchen.attempts where key=attempt_key;
     delete from kitchen.sessions where expires_at<now();
     raw_token:=encode(extensions.gen_random_bytes(32),'hex');
-    insert into kitchen.sessions values(encode(extensions.digest(raw_token,'sha256'),'hex'),acct.name,acct.version,now()+interval '30 days');
+    insert into kitchen.sessions values(encode(extensions.digest(raw_token,'sha256'),'hex'),acct.name,acct.version,now()+interval '90 days');
     return jsonb_build_object('account',acct.name,'session',raw_token);
   end if;
-  if action='report' then who:='manager'; else
     select s.* into sess from kitchen.sessions s join kitchen.accounts a on a.name=s.account and a.version=s.version where s.token_hash=encode(extensions.digest(coalesce(token,''),'sha256'),'hex') and s.expires_at>now();
     who:=sess.account;
-  end if;
+
   if who is null then return jsonb_build_object('error','Please sign in','status',401); end if;
+  update kitchen.sessions set expires_at=now()+interval '90 days' where token_hash=sess.token_hash and expires_at<now()+interval '89 days';
   if action='logout' then delete from kitchen.sessions where token_hash=sess.token_hash; return jsonb_build_object('ok',true); end if;
   if action='password' then
     select * into acct from kitchen.accounts where name=who for update;
@@ -66,7 +66,7 @@ begin
     insert into kitchen.audit(actor,action) values(who,'password_changed');
     return jsonb_build_object('ok',true);
   end if;
-  if action in ('state','report') then
+  if action='state' then
     select jsonb_build_object('account',who,'products',coalesce((select jsonb_agg(case when who='supplier' then to_jsonb(pp) else to_jsonb(pp)-'cost_price' end order by pp.active desc,pp.category desc,pp.name) from kitchen.products pp),'[]'::jsonb),'deliveries',coalesce((select jsonb_agg(case when who='supplier' then to_jsonb(dd) else jsonb_set(to_jsonb(dd),'{items}',coalesce((select jsonb_agg(i-'cost_price') from jsonb_array_elements(dd.items) i),'[]'::jsonb)) end order by dd.date desc,dd.created_at desc) from kitchen.deliveries dd),'[]'::jsonb),'payments',coalesce((select jsonb_agg(to_jsonb(x) order by x.date desc) from kitchen.payments x),'[]'::jsonb),'migration',jsonb_build_object('captured_at',(select value from kitchen.config where key='source_captured_at'),'review_count',(select count(*) from kitchen.reconciliation where resolved_at is null),'stage',(select value from kitchen.config where key='stage'))) into result;
     return result;
   end if;

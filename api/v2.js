@@ -27,9 +27,10 @@ export default async function handler(req, res) {
     const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0];
     const result = await rpc(action, cookie(req), action === 'login' ? { ...data, ip: createHash('sha256').update(ip).digest('hex') } : data);
     if (result.session) {
-      res.setHeader('Set-Cookie', `kitchen_session=${result.session}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=2592000`);
+      res.setHeader('Set-Cookie', `kitchen_session=${result.session}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=7776000`);
       delete result.session;
     }
+    if (!result.error && action !== 'logout' && cookie(req) && !res.getHeader('Set-Cookie')) res.setHeader('Set-Cookie', `kitchen_session=${cookie(req)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=7776000`);
     if (action === 'logout' || result.status === 401) res.setHeader('Set-Cookie', 'kitchen_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0');
     return res.status(result.status || 200).json(result);
   } catch (error) { return res.status(503).json({ error: 'Service temporarily unavailable. Your changes were not confirmed; reload before retrying.' }); }

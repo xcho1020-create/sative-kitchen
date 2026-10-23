@@ -21,6 +21,14 @@ Use a temporary new password, sign in, and change it under Settings. Existing se
 
 `scripts/prepare-import.py` converts verified read-only exports of the two original Google workbooks into idempotent SQL. Source snapshots and generated SQL stay in ignored `.migration/`; never commit them. All 18 original tabs are preserved in `kitchen.source_archive`; oversized tabs are stored in ordered `part` records with `row_offset`. Import retains the recorded sell totals, item snapshots, historic flags, and source dates. Four reconciliation records flag ambiguous original values. Legacy `paid` flags are historical metadata, not new payment entries. The two imported `unpaid` flags are presented separately for manual reconciliation and do not enter new payout balances.
 
-During transition, the original workbook tabs remain intact. The app becomes the source for new records. Report-only tabs in the two workbooks can import signed CSV endpoints `/api/report?type=products|deliveries|items|payouts&key=...` for automatic expansion without dragging formulas. Treat feed URLs as secrets; only share with people who already have access to the corresponding workbook. The report omits supplier costs. The café CRM remains a manual manager entry with a separate completion mark.
+## Live architecture
+
+The application and Supabase are the only operational system. Google Sheets is disconnected. No Sheets credentials, formulas, scheduled sync, or export feeds are used. The old workbooks remain historical reference files. Temporary app report tabs were removed. Both old HTTP endpoints return 410; the database no longer has an unauthenticated report action.
+
+## Mobile and installation
+
+The responsive UI uses compact bottom navigation on phones and a centred desktop layout. The delivery form has a search field and a persistent total/save bar. The web app manifest and Apple metadata support Add to Home Screen. Install from Safari's Share menu. The first standalone launch may require signing in once because the OS can use a separate cookie store. Subsequent launches reuse a protected HttpOnly cookie; sessions expire after 90 days without activity and renew during use. Password changes revoke other sessions.
+
+The service worker stores only public static assets. It never caches API responses, passwords, costs or delivery records. Writes require an internet connection; an offline screen avoids implying that a delivery was saved.
 
 Each new delivery snapshots price, unit, quantity and optional cost. An archived product remains in historic deliveries. Payouts use flexible dates; changing assignment is blocked once either payout has a payment. Partial payments and idempotency keys prevent accidental duplicates. Manager acceptance, discrepancy and CRM marks are distinct. Report data is a read-only mirror, not a bidirectional edit target.
