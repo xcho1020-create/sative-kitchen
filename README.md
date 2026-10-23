@@ -1,64 +1,26 @@
-# Sative Kitchen - Delivery Management App
+# Sative Kitchen
 
-простое веб-приложение для управления поставками/заготовками
+Daily deliveries, catalogue, café acceptance and payout tracking. The UI is served by Vercel and the database is a dedicated Supabase project. Costs are available to the supplier account only; server responses and report feeds for the manager omit them.
 
-## установка
+## Setup
 
-### 1. заливаем на github
+Apply `db/schema.sql` to a dedicated Supabase project. Set `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `KITCHEN_GATEWAY_KEY` (random 32+ byte secret), and `KITCHEN_REPORT_KEY` (a separate random secret) in Vercel. Store a SHA-256 hex digest of the gateway key in `kitchen.config` under `gateway_hash`. Seed `supplier` and `manager` in `kitchen.accounts` with `extensions.crypt(password,extensions.gen_salt('bf',10))`. Never put keys in the browser or repo. The owner can recover an account in the Supabase SQL editor using:
 
-1. открой https://github.com/xcho1020-create/sative-kitchen
-2. нажми **Add file** → **Create new file**
-3. имя файла: `index.html`
-4. скопируй содержимое из index.html
-5. нажми **commit new file**
-
-повтори для остальных:
-- config.js
-- app.js
-- styles.css
-
-### 2. деплоим на vercel
-
-1. зайди на https://vercel.com
-2. нажми **Add New Project**
-3. выбери **Import Git Repository**
-4. найди `xcho1020-create/sative-kitchen`
-5. нажми **Import**
-6. нажми **Deploy**
-
-через 1-2 минуты приложение будет живо на vercel
-
-## пароли
-
-- **мама**: 1234
-- **менеджер**: 5678
-- **админ**: 9999
-
-меняй в файле config.js в переменной AUTH
-
-## api
-
-приложение подключается к google apps script api:
-```
-https://script.google.com/macros/s/AKfycbw8qyk5QShIHCi2dm3sHZcAQizNH2QGEAvkKI6lYO2ZNb0f3NZUaLTlQxjfyVzGRHMbqg/exec
+```sql
+begin;
+update kitchen.accounts
+set password_hash=extensions.crypt('REPLACE_WITH_A_NEW_SECRET',extensions.gen_salt('bf',10)),version=version+1
+where name='supplier'; -- or manager
+delete from kitchen.sessions where account='supplier';
+commit;
 ```
 
-этот url уже вставлен в config.js
+Use a temporary new password, sign in, and change it under Settings. Existing sessions are invalidated. Initial passwords are supplied privately to the account holders and must be changed after first use.
 
-## функционал v1
+## Data and migration
 
-- **мама**: создание поставок, редактирование
-- **менеджер**: просмотр поставок (read-only)
-- **админ**: управление ценами продуктов, логи действий
+`scripts/prepare-import.py` converts verified read-only exports of the two original Google workbooks into idempotent SQL. Source snapshots and generated SQL stay in ignored `.migration/`; never commit them. All 18 original tabs are preserved in `kitchen.source_archive`; oversized tabs are stored in ordered `part` records with `row_offset`. Import retains the recorded sell totals, item snapshots, historic flags, and source dates. Four reconciliation records flag ambiguous original values. Legacy `paid` flags are historical metadata, not new payment entries. The two imported `unpaid` flags are presented separately for manual reconciliation and do not enter new payout balances.
 
-## что дальше (v2)
+During transition, the original workbook tabs remain intact. The app becomes the source for new records. Report-only tabs in the two workbooks can import signed CSV endpoints `/api/report?type=products|deliveries|items|payouts&key=...` for automatic expansion without dragging formulas. Treat feed URLs as secrets; only share with people who already have access to the corresponding workbook. The report omits supplier costs. The café CRM remains a manual manager entry with a separate completion mark.
 
-- калькулятор рецептур
-- экспорт в pdf
-- интеграция с telegram
-- мобильное приложение (PWA)
-- больше аналитики
-
----
-
-вопросы? пиши
+Each new delivery snapshots price, unit, quantity and optional cost. An archived product remains in historic deliveries. Payouts use flexible dates; changing assignment is blocked once either payout has a payment. Partial payments and idempotency keys prevent accidental duplicates. Manager acceptance, discrepancy and CRM marks are distinct. Report data is a read-only mirror, not a bidirectional edit target.
