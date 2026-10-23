@@ -66,7 +66,7 @@ begin
     return jsonb_build_object('ok',true);
   end if;
   if action in ('state','report') then
-    select jsonb_build_object('account',who,'products',coalesce((select jsonb_agg(case when who='supplier' then to_jsonb(p) else to_jsonb(p)-'cost_price' end order by p.active desc,p.category desc,p.name) from kitchen.products p),'[]'::jsonb),'deliveries',coalesce((select jsonb_agg(case when who='supplier' then to_jsonb(d) else jsonb_set(to_jsonb(d),'{items}',coalesce((select jsonb_agg(i-'cost_price') from jsonb_array_elements(d.items) i),'[]'::jsonb)) end order by d.date desc,d.created_at desc) from kitchen.deliveries d),'[]'::jsonb),'payments',coalesce((select jsonb_agg(to_jsonb(x) order by x.date desc) from kitchen.payments x),'[]'::jsonb),'migration',jsonb_build_object('captured_at',(select value from kitchen.config where key='source_captured_at'),'review_count',(select count(*) from kitchen.reconciliation where resolved_at is null),'stage',(select value from kitchen.config where key='stage'))) into result;
+    select jsonb_build_object('account',who,'products',coalesce((select jsonb_agg(case when who='supplier' then to_jsonb(pp) else to_jsonb(pp)-'cost_price' end order by pp.active desc,pp.category desc,pp.name) from kitchen.products pp),'[]'::jsonb),'deliveries',coalesce((select jsonb_agg(case when who='supplier' then to_jsonb(dd) else jsonb_set(to_jsonb(dd),'{items}',coalesce((select jsonb_agg(i-'cost_price') from jsonb_array_elements(dd.items) i),'[]'::jsonb)) end order by dd.date desc,dd.created_at desc) from kitchen.deliveries dd),'[]'::jsonb),'payments',coalesce((select jsonb_agg(to_jsonb(x) order by x.date desc) from kitchen.payments x),'[]'::jsonb),'migration',jsonb_build_object('captured_at',(select value from kitchen.config where key='source_captured_at'),'review_count',(select count(*) from kitchen.reconciliation where resolved_at is null),'stage',(select value from kitchen.config where key='stage'))) into result;
     return result;
   end if;
   if action in ('product','archive','delivery','move_payout') and who<>'supplier' then return jsonb_build_object('error','Supplier access required','status',403); end if;
@@ -132,8 +132,8 @@ begin
     perform pg_advisory_xact_lock(hashtextextended('payout:'||day::text,0));
     if exists(select 1 from kitchen.payments where request_id=data->>'request_id') then return jsonb_build_object('ok',true); end if;
     if exists(select 1 from kitchen.deliveries where payout_date=day and source='app' and (accepted_at is null or issue is not null)) then return jsonb_build_object('error','Accept all deliveries and resolve discrepancies first','status',409); end if;
-    select coalesce(sum(total),0) into due from kitchen.deliveries where payout_date=day and source='app';
-    select coalesce(sum(p.amount),0) into already from kitchen.payments p where p.payout_date=day;
+    select coalesce(sum(kd.total),0) into due from kitchen.deliveries kd where kd.payout_date=day and kd.source='app';
+    select coalesce(sum(kpay.amount),0) into already from kitchen.payments kpay where kpay.payout_date=day;
     if amount>due-already then return jsonb_build_object('error','Payment exceeds outstanding amount','status',409); end if;
     insert into kitchen.payments(payout_date,amount,date,reference,actor,request_id) values(day,amount,v_date,left(coalesce(data->>'reference',''),250),who,data->>'request_id');
   else return jsonb_build_object('error','Unknown action','status',400);
