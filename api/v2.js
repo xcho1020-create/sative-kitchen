@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash } from 'node:crypto';
 
 export const config = { maxDuration: 30 };
 export async function rpc(action, token, data) {
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
   const origin = req.headers.origin;
-  if (origin && new URL(origin).host !== req.headers.host) return res.status(403).json({ error: 'Invalid origin' });
+  if (origin) { try { if (new URL(origin).host !== req.headers.host) return res.status(403).json({ error: 'Invalid origin' }); } catch { return res.status(403).json({ error: 'Invalid origin' }); } }
   if (!String(req.headers['content-type'] || '').startsWith('application/json')) return res.status(415).json({ error: 'JSON required' });
   if (!process.env.KITCHEN_GATEWAY_KEY || !process.env.SUPABASE_URL || !process.env.SUPABASE_PUBLISHABLE_KEY) return res.status(503).json({ error: 'Service is not configured' });
   try {

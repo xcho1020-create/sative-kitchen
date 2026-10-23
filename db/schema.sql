@@ -5,6 +5,7 @@ grant usage on schema kitchen to anon;
 create table kitchen.config (key text primary key,value jsonb not null);
 create table kitchen.accounts (name text primary key check(name in ('supplier','manager')),password_hash text not null,version int not null default 1);
 create table kitchen.sessions (token_hash text primary key,account text not null references kitchen.accounts(name),version int not null,expires_at timestamptz not null);
+create index sessions_account on kitchen.sessions(account);
 create table kitchen.attempts (key text primary key,count int not null default 0,started_at timestamptz not null default now());
 create table kitchen.products (id text primary key,name text not null check(length(name) between 1 and 160),category text not null check(category in ('ready','ingredient')),unit text not null check(unit in ('pcs','g','ml')),price_quantity numeric not null check(price_quantity>0),supply_price numeric not null check(supply_price>=0),cost_price numeric check(cost_price>=0),active boolean not null default true,version int not null default 1,created_at timestamptz not null default now());
 create table kitchen.deliveries (id text primary key default gen_random_uuid()::text,date date not null,payout_date date not null,items jsonb not null check(jsonb_typeof(items)='array'),total numeric(14,2) not null check(total>=0),accepted_at timestamptz,crm_at timestamptz,issue text,source text not null default 'app',legacy_payment_status text,review_note text,request_id text unique,created_at timestamptz not null default now());
@@ -87,6 +88,7 @@ begin
   elsif action='archive' then
     update kitchen.products set active=(data->>'active')::boolean,version=version+1 where id=data->>'id';
   elsif action='delivery' then
+    if length(coalesce(data->>'request_id','')) not between 8 and 100 then return jsonb_build_object('error','Request ID required','status',400); end if;
     if jsonb_typeof(data->'items')<>'array' or jsonb_array_length(data->'items') not between 1 and 200 then return jsonb_build_object('error','Add at least one product','status',400); end if;
     select id into duplicate from kitchen.deliveries where request_id=data->>'request_id';
     if duplicate is not null then return jsonb_build_object('ok',true,'id',duplicate); end if;
@@ -127,6 +129,7 @@ begin
     else update kitchen.deliveries set issue=nullif(left(btrim(data->>'issue'),1000),'') where id=d.id;
     end if;
   elsif action='payment' then
+    if length(coalesce(data->>'request_id','')) not between 8 and 100 then return jsonb_build_object('error','Request ID required','status',400); end if;
     day:=(data->>'payout_date')::date; amount:=round((data->>'amount')::numeric,2); v_date:=(data->>'date')::date;
     if day is null or v_date is null or amount is null or amount<=0 then return jsonb_build_object('error','Check payment amount and dates','status',400); end if;
     perform pg_advisory_xact_lock(hashtextextended('payout:'||day::text,0));
