@@ -1,0 +1,6 @@
+.migration/
+.env*
+!.env.example
+.vercel/
+node_modules/
+test-results/
