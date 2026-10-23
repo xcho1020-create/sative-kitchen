@@ -6,3 +6,9 @@
 @media(max-height:500px) and (orientation:landscape){.k-top{height:48px;padding-top:0}.k-nav{height:52px;padding-bottom:0}.k-nav button{height:51px;flex-direction:row}.k-main{padding-bottom:75px}.compose-summary{bottom:52px}.k-login{margin-top:8px}}
 @media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#161616;--card:#202020;--text:#f2f2ee;--muted:#a1a19a;--line:#383835;--soft:#30302e}.k-logo{filter:invert(1)}.k-primary{background:#f2f2ee;color:#171717;border-color:#f2f2ee}.k-orange{color:#171717}input:focus,select:focus{box-shadow:0 0 0 2px #ffffff12}}
 @media(prefers-reduced-motion:no-preference){button{transition:background .12s,border-color .12s}dialog[open]{animation:appear .15s ease-out}@keyframes appear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}}
+/* Sticky shell keeps the existing desktop and mobile dimensions. */
+:root{--shell-height:115px;scroll-padding-top:calc(var(--shell-height) + 12px)}
+.k-shell-header{position:sticky;top:0;z-index:30}.compose-summary{top:calc(var(--shell-height) + 16px)}.toast{top:calc(var(--shell-height) + 8px)}
+.overview-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:-2px 0 16px}.overview-filters label{width:156px}.overview-filters label:first-child{width:122px}.overview-filters .k-btn{min-height:44px}.period-caption{color:var(--muted);font-size:11px;align-self:center;margin:17px 0 0 4px}
+@media(max-width:680px){:root{--shell-height:calc(57px + env(safe-area-inset-top))}.compose-summary{top:auto}.overview-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;margin-bottom:13px}.overview-filters label,.overview-filters label:first-child{width:auto}.overview-filters:has([name=from]) label:first-child{grid-column:1/-1}.overview-filters .k-btn{grid-column:1/-1;min-height:38px}.period-caption{grid-column:1/-1;margin:0;font-size:10px}}
+@media(max-height:500px) and (orientation:landscape){:root{--shell-height:48px}}
