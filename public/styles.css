@@ -12,3 +12,8 @@
 .overview-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:-2px 0 16px}.overview-filters label{width:156px}.overview-filters label:first-child{width:122px}.overview-filters .k-btn{min-height:44px}.period-caption{color:var(--muted);font-size:11px;align-self:center;margin:17px 0 0 4px}
 @media(max-width:680px){:root{--shell-height:calc(57px + env(safe-area-inset-top))}.compose-summary{top:auto}.overview-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;margin-bottom:13px}.overview-filters label,.overview-filters label:first-child{width:auto}.overview-filters:has([name=from]) label:first-child{grid-column:1/-1}.overview-filters .k-btn{grid-column:1/-1;min-height:38px}.period-caption{grid-column:1/-1;margin:0;font-size:10px}}
 @media(max-height:500px) and (orientation:landscape){:root{--shell-height:48px}}
+
+/* Payment controls reuse the approved field and button sizes. */
+.payout-payment{max-width:640px;padding-top:16px;display:grid;gap:14px}.payout-payment .k-fields{margin-bottom:0}.payout-payment-footer{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:14px}.payout-payment-footer .k-btn{min-height:44px}
+@media(max-width:680px){.payout-payment{padding-top:14px;gap:12px}.payout-payment .k-fields{gap:10px}.payout-payment-footer{grid-template-columns:minmax(0,1fr);gap:12px}.payout-payment-footer .k-btn{width:100%}}
+@media(max-width:380px){.payout-payment .k-fields{grid-template-columns:minmax(0,1fr)}}
