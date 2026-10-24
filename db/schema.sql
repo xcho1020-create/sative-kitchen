@@ -71,7 +71,7 @@ begin
     return result;
   end if;
   if action in ('product','archive','delivery','move_payout') and who<>'supplier' then return jsonb_build_object('error','Supplier access required','status',403); end if;
-  if action in ('accept','crm','issue','payment') and who<>'manager' then return jsonb_build_object('error','Manager access required','status',403); end if;
+  if action in ('accept','crm','issue') and who<>'manager' then return jsonb_build_object('error','Manager access required','status',403); end if;
   if action='product' then
     if nullif(btrim(data->>'name'),'') is null or data->>'unit' not in ('pcs','g','ml') or (data->>'supply_price')::numeric<0 or (data->>'price_quantity')::numeric<=0 then return jsonb_build_object('error','Check product fields','status',400); end if;
     if nullif(data->>'id','') is not null then
