@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   if (!process.env.KITCHEN_GATEWAY_KEY || !process.env.SUPABASE_URL || !process.env.SUPABASE_PUBLISHABLE_KEY) return res.status(503).json({ error: 'Service is not configured' });
   try {
     const { action, data = {} } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
-    const allowed = ['login','logout','password','state','product','archive','delivery','move_payout','accept','crm','issue','payment'];
+    const allowed = ['login','logout','password','state','product','archive','delivery','move_payout','accept','crm','issue','payment','edit_delivery','delete_delivery','split_delivery','edit_payment','delete_payment','transfer_advance'];
     if (!allowed.includes(action) || !data || typeof data !== 'object' || JSON.stringify(data).length > 100000) return res.status(400).json({ error: 'Invalid request' });
     const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0];
     const result = await rpc(action, cookie(req), action === 'login' ? { ...data, ip: createHash('sha256').update(ip).digest('hex') } : data);
