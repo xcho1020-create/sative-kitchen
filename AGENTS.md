@@ -15,3 +15,6 @@ Keep the interface scale and responsive layout approved on 23 October 2026. Exte
 - Delivery Actions menus hold edit, split and delete; acceptance and CRM confirmations remain visible primary actions for managers. Keep action icons at 16 px, mobile inputs/payment buttons at 44 px, and the delivery save bar at 45 px.
 - Money, delivery acceptance and CRM entry are independent flows. Payments may precede deliveries; amendments must retain received money and show any excess as an advance. Never restore acceptance or paid-payout edit blockers.
 - Payouts sort newest first, include payment-only advances, and show delivery/payment history inside compact disclosures. Keep period filters separate from totals.
+
+- Render mobile navigation as a sibling of the sticky header, never inside it. Fixed children of a sticky ancestor can misposition in iOS Safari / home-screen mode. Keep desktop navigation sticky below the header.
+- Supplier delivery cards put View items and Actions in the same row; expand item contents to full width. Imported, unprocessed historical records do not show new-delivery pending states.

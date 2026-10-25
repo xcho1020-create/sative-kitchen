@@ -23,3 +23,9 @@
 @media(max-width:380px){.payout-figures strong{font-size:12px}.payout-heading{gap:6px}.payout-heading h3{font-size:13px}.payout-delivery>div{flex-basis:100%}.payout-delivery>.k-btn{margin-left:auto}#ledger-dialog .k-fields{grid-template-columns:minmax(0,1fr)}.dialog-heading h3{font-size:16px}}
 .delivery-controls>.record-actions{margin-left:auto}
 @media(max-width:680px){#ledger-dialog .k-actions .k-btn{min-height:44px}}
+
+/* Keep fixed mobile navigation outside the sticky header (Safari / home-screen app). */
+:root{--top-height:66px}.k-nav{position:sticky;top:var(--top-height);z-index:29}.delivery-details{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;margin-top:8px}.delivery-details>.delivery-items{margin:0;min-width:0}.delivery-details>.delivery-controls{margin:0}.delivery-details:has(.delivery-items[open]),.delivery-details.has-processing{grid-template-columns:minmax(0,1fr)}.delivery-details .delivery-items>summary{padding:9px 0}.delivery-issue{margin:12px 0 0}.payout-history .empty-state{padding:8px 0}.payment-disclosure{margin-top:12px}.payout-history{margin-top:14px}.payout-body>.payout-bottom-actions{margin-top:10px}
+@media(max-width:680px){.k-nav{position:fixed;top:auto;bottom:0;z-index:35}.k-shell-header{z-index:30}.delivery-details{margin-top:7px}.delivery-details.has-processing{gap:8px}.delivery-details>.delivery-controls{align-items:center}.payout-body{padding-top:12px;margin-top:12px}.payout-history{margin-top:12px}.payout-body .empty-state{padding:8px 0}.payment-disclosure{margin-top:10px}.payment-disclosure .payout-payment{padding-top:10px;gap:12px}html{scroll-padding-bottom:calc(80px + env(safe-area-inset-bottom))}.payout-payment button[type=submit],.record-actions summary{scroll-margin-bottom:calc(80px + env(safe-area-inset-bottom))}}
+
+.record-actions.opens-up .record-actions-list{top:auto;bottom:calc(100% + 6px)}
